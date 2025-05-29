@@ -18,15 +18,23 @@ export class MessageController {
     const text = message.body.trim().toLowerCase();
 
     // Trigger the mass mention action
-    if (text === "@all") {
+    if (text === "!all" || text === "!todos") {
       await this.actions.mentionAll(message);
       return;
     }
 
-    // Trigger the presence confirmation action
-    if (text === "sim") {
-      await this.actions.confirmPresence(message);
+    if (text === "!help" || text === "!ajuda") {
+      await message.reply(
+        "🤖 Olá! Eu sou a YasBot. Aqui estão os comandos disponíveis:\n\n" +
+          "- `!todos`: Menciona todos os participantes do grupo.\n"
+      );
       return;
     }
+
+    // // Trigger the presence confirmation action
+    // if (text === "sim") {
+    //   await this.actions.confirmPresence(message);
+    //   return;
+    // }
   }
 }

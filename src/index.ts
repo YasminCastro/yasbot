@@ -25,7 +25,7 @@ async function startBot(): Promise<void> {
   });
 
   // 3. Create BotActions and MessageController
-  const actions = new BotActions(client, sheetsService);
+  const actions = new BotActions(sheetsService);
   const controller = new MessageController(actions);
 
   // 4. Display QR code for login

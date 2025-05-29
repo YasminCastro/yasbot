@@ -6,10 +6,7 @@ import { GoogleSheetsService } from "../services/GoogleSheetsService";
  * Class responsible for handling all bot actions
  */
 export class BotActions {
-  constructor(
-    private client: Client,
-    private sheetsService: GoogleSheetsService
-  ) {}
+  constructor(private sheetsService: GoogleSheetsService) {}
 
   /**
    * Mentions all participants in a group chat
