@@ -3,35 +3,30 @@ import { Message } from "whatsapp-web.js";
 import { BotActions } from "../actions/BotActions";
 
 /**
- * Controller responsável por receber mensagens e disparar as ações apropriadas
+ * Controller responsible for handling incoming messages and dispatching the appropriate bot actions
  */
 export class MessageController {
   constructor(private actions: BotActions) {}
 
   /**
-   * Processa uma nova mensagem e chama a ação correspondente
+   * Processes a new message and invokes the corresponding action
    */
   public async handle(message: Message): Promise<void> {
-    // Ignora mensagens enviadas pelo próprio bot
+    // Ignore messages sent by the bot itself
     if (message.fromMe) return;
 
     const text = message.body.trim().toLowerCase();
 
-    // Dispara a ação de menção em massa
-    if (text === "@all" || text === "@marcartodos") {
+    // Trigger the mass mention action
+    if (text === "@all") {
       await this.actions.mentionAll(message);
       return;
     }
 
-    // Dispara a ação de confirmação de presença
+    // Trigger the presence confirmation action
     if (text === "sim") {
       await this.actions.confirmPresence(message);
       return;
     }
-
-    // Aqui você pode adicionar novos comandos, ex:
-    // if (text.startsWith("!help")) {
-    //   await this.actions.showHelp(message);
-    // }
   }
 }
