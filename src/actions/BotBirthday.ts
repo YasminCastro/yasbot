@@ -1,5 +1,5 @@
 // src/actions/BotActions.ts
-import { Client, Message, GroupChat } from "whatsapp-web.js";
+import { Client, Message } from "whatsapp-web.js";
 import { MongoService } from "../services/MongoService";
 
 /**
@@ -14,9 +14,18 @@ export class BotBirthday {
   public async addGuest(message: Message, command: string): Promise<void> {
     const text = this.getTextAndRemoveCommand(message, command);
 
-    const textParts = text.split(" ");
-    const person = textParts[0];
-    const number = textParts[1];
+    const parts = text.split(/\s+/).filter(Boolean);
+
+    if (parts.length < 2) {
+      await message.reply(
+        "❌ Uso: @add-person <Nome> <Número>\n" +
+          "Exemplo: @add-person Maria 11999888777"
+      );
+      return;
+    }
+
+    const number = parts.pop()!;
+    const person = parts.join(" ");
 
     const wasGuestAdded = await this.mongo.addGuest(person, number);
 
