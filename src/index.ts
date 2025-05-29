@@ -1,63 +1,58 @@
 // src/index.ts
-import "dotenv/config";
 import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
-import registerPresence from "./services/registerPresence";
 
-const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: { headless: true },
-});
-
-client.on("qr", (qr: string) => {
-  qrcode.generate(qr, { small: true });
-  console.log("📸 Escaneie o QR code acima");
-});
-
-client.on("ready", async () => {
-  console.log("✔️  WhatsApp pronto!");
-
-  // Aqui você dispara o convite assim que conectar
-  // Substitua pelo número do convidado (DDI+DDD+telefone)
-  await sendInvitation("556281695581");
-});
-
-client.initialize();
-
-client.on("message", async (message: Message) => {
-  // 🛑 Ignora mensagens enviadas por este próprio cliente
-  console.log(message);
-  // if (message.fromMe) return;
-  // const text = message.body.trim().toLowerCase();
-  // const contact = await message.getContact();
-  // const name = contact.pushname || contact.number;
-  // if (text === "sim") {
-  //   // Confirmação de presença
-  //   await registerPresence(name, contact.number);
-  //   await message.reply(`Obrigado, ${name}! Sua presença foi confirmada 🎉`);
-  // } else {
-  //   // Caso a pessoa inicie a conversa
-  //   await message.reply(
-  //     `🎂 Olá! Você está convidado(a) pro meu aniversário no dia XX/XX!\n` +
-  //       `Responda “sim” para confirmar presença.`
-  //   );
-  // }
-});
+import { BotActions } from "./actions/BotActions";
+import { GoogleSheetsService } from "./services/GoogleSheetsService";
+import { SPREADSHEET_ID, GOOGLE_APPLICATION_CREDENTIALS } from "./config";
+import { MessageController } from "./controllers/MessageController";
+import chalk from "chalk";
 
 /**
- * Envia o convite inicial para o número especificado.
- * @param phone Número no formato DDI+DDD+telefone (ex: "5511981695581")
+ * Inicializa e inicia o bot
  */
-async function sendInvitation(phone: string) {
-  const chatId = `${phone}@c.us`;
-  const inviteText =
-    `🎂 Olá! Você está convidado(a) pro meu aniversário no dia XX/XX!\n` +
-    `Responda “sim” para confirmar presença.`;
+async function startBot(): Promise<void> {
+  // 1. Instancia o client do WhatsApp
+  const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: { headless: true },
+  });
 
-  try {
-    const msg = await client.sendMessage(chatId, inviteText);
-    console.log(`✅ Convite enviado para ${phone}:`, msg.id._serialized);
-  } catch (err) {
-    console.error(`❌ Erro ao enviar convite para ${phone}:`, err);
-  }
+  // 2. Configura o serviço do Google Sheets
+  const sheetsService = new GoogleSheetsService({
+    spreadsheetId: SPREADSHEET_ID,
+    credentialsPath: GOOGLE_APPLICATION_CREDENTIALS,
+  });
+
+  // 3. Cria BotActions e MessageController
+  const actions = new BotActions(client, sheetsService);
+  const controller = new MessageController(actions);
+
+  // 4. QR code para login
+  client.on("qr", (qr: string) => {
+    qrcode.generate(qr, { small: true });
+    console.log(chalk.bgBlueBright("📸 Scan qr code above"));
+  });
+
+  // 5. Bot pronto
+  client.on("ready", () => {
+    console.log(chalk.green("✔️  Yasbot ready!"));
+  });
+
+  // 6. Roteamento de mensagens ao controller
+  client.on("message", async (message: Message) => {
+    try {
+      await controller.handle(message);
+    } catch (err) {
+      console.error(chalk.red("Error to process message:"), err);
+    }
+  });
+
+  // 7. Inicializa a conexão
+  await client.initialize();
 }
+
+startBot().catch((err) => {
+  console.error(chalk.red("Error to start Yasbot:"), err);
+  process.exit(1);
+});

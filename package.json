@@ -1,10 +1,10 @@
 {
-  "name": "party-invite-whatsapp",
+  "name": "yasbot",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev --respawn --transpile-only --quiet src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -12,8 +12,10 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "chalk": "^5.4.1",
     "dotenv": "^16.5.0",
     "googleapis": "^149.0.0",
+    "puppeteer": "^24.9.0",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.28.0"
   },
@@ -21,6 +23,7 @@
     "@types/node": "^22.15.21",
     "@types/qrcode-terminal": "^0.12.2",
     "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
   }
 }
