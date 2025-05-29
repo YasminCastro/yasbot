@@ -12,22 +12,17 @@ export class MessageController {
    * Processes a new message and invokes the corresponding action
    */
   public async handle(message: Message): Promise<void> {
-    // Ignore messages sent by the bot itself
     if (message.fromMe) return;
 
     const text = message.body.trim().toLowerCase();
 
-    // Trigger the mass mention action
     if (text === "!all" || text === "!todos") {
       await this.actions.mentionAll(message);
       return;
     }
 
     if (text === "!help" || text === "!ajuda") {
-      await message.reply(
-        "🤖 Olá! Eu sou a YasBot. Aqui estão os comandos disponíveis:\n\n" +
-          "- `!todos`: Menciona todos os participantes do grupo.\n"
-      );
+      await this.actions.help(message);
       return;
     }
 
