@@ -33,8 +33,13 @@ export class MessageController {
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
       console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
       // If the sender is an admin, you can add more commands here
-      if (text.includes("@add-person")) {
-        await this.birthday.addPerson(message);
+      if (text.includes("@add-guest")) {
+        await this.birthday.addGuest(message, "@add-guest");
+        return;
+      }
+
+      if (text.includes("@remove-guest")) {
+        await this.birthday.removeGuest(message, "@remove-guest");
         return;
       }
     }

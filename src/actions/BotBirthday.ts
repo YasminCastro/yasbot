@@ -9,10 +9,10 @@ export class BotBirthday {
   constructor(private mongo: MongoService) {}
 
   /**
-   * Mentions all participants in a group chat
+   * Add guests to the birthday list
    */
-  public async addPerson(message: Message): Promise<void> {
-    const text = this.getTextAndRemoveCommand(message, "@add-person");
+  public async addGuest(message: Message, command: string): Promise<void> {
+    const text = this.getTextAndRemoveCommand(message, command);
 
     const textParts = text.split(" ");
     const person = textParts[0];
@@ -27,6 +27,25 @@ export class BotBirthday {
     } else {
       await message.reply(
         `Não foi possível adicionar ${person} à lista de convidados. Tente novamente mais tarde.`
+      );
+    }
+  }
+
+  /**
+   * Remove guests from the birthday list
+   */
+  public async removeGuest(message: Message, command: string): Promise<void> {
+    const number = this.getTextAndRemoveCommand(message, command);
+
+    const wasGuestRemoved = await this.mongo.removeGuest(number);
+
+    if (wasGuestRemoved) {
+      await message.reply(
+        `${number} foi removido com sucesso a lista de convidados!`
+      );
+    } else {
+      await message.reply(
+        `Não foi possível adicionar ${number} à lista de convidados. Tente novamente mais tarde.`
       );
     }
   }

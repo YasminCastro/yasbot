@@ -1,6 +1,6 @@
 // src/services/MongoService.ts
 import chalk from "chalk";
-import { MongoClient, Collection } from "mongodb";
+import { MongoClient, Collection, DeleteResult } from "mongodb";
 
 export interface Guest {
   _id?: string;
@@ -63,6 +63,25 @@ export class MongoService {
     });
 
     return response.acknowledged;
+  }
+
+  /**
+   * Removes a guest from the collection by their phone number.
+   */
+  public async removeGuest(number: string): Promise<boolean> {
+    try {
+      const result: DeleteResult = await this.guests.deleteOne({ number });
+      if (result.deletedCount && result.deletedCount > 0) {
+        console.log(chalk.green(`Guest removed: ${number}`));
+        return true;
+      } else {
+        console.warn(chalk.yellow(`No guest found with number ${number}`));
+        return false;
+      }
+    } catch (err) {
+      console.error(chalk.red("❌ Error removing guest:"), err);
+      throw err;
+    }
   }
 
   /**
