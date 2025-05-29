@@ -51,6 +51,29 @@ export class BotBirthday {
   }
 
   /**
+   * Get birthday list
+   */
+  public async getGuests(message: Message): Promise<void> {
+    const guests = await this.mongo.getGuests();
+
+    if (guests.length === 0) {
+      await message.reply("📋 A lista de convidados está vazia.");
+      return;
+    }
+
+    const lines = guests.map((g, index) => {
+      const status = g.confirmed
+        ? "✅ confirmado"
+        : "⏳ aguardando confirmação";
+      return `${index + 1} - ${g.name} (${g.number}) – ${status}`;
+    });
+
+    const reply = ["📋 *Lista atual de convidados*", ...lines].join("\n");
+
+    await message.reply(reply);
+  }
+
+  /**
    * Records the presence of users who reply "sim" in the spreadsheet and sends a confirmation
    */
   public async confirmPresence(message: Message): Promise<void> {}

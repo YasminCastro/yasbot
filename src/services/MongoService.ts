@@ -72,14 +72,25 @@ export class MongoService {
     try {
       const result: DeleteResult = await this.guests.deleteOne({ number });
       if (result.deletedCount && result.deletedCount > 0) {
-        console.log(chalk.green(`Guest removed: ${number}`));
         return true;
       } else {
-        console.warn(chalk.yellow(`No guest found with number ${number}`));
         return false;
       }
     } catch (err) {
       console.error(chalk.red("❌ Error removing guest:"), err);
+      throw err;
+    }
+  }
+
+  /**
+   * Retrieves all guests from the collection.
+   */
+  public async getGuests(): Promise<Guest[]> {
+    try {
+      const guests = await this.guests.find().toArray();
+      return guests;
+    } catch (err) {
+      console.error(chalk.red("❌ Error fetching guests:"), err);
       throw err;
     }
   }

@@ -42,6 +42,11 @@ export class MessageController {
         await this.birthday.removeGuest(message, "@remove-guest");
         return;
       }
+
+      if (text.includes("@get-guests")) {
+        await this.birthday.getGuests(message);
+        return;
+      }
     }
 
     // // Trigger the presence confirmation action
