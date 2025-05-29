@@ -2,6 +2,8 @@
 import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
 import chalk from "chalk";
+import puppeteer from "puppeteer";
+import { format } from "date-fns";
 
 import { BotActions } from "./actions/BotActions";
 import { GoogleSheetsService } from "./services/GoogleSheetsService";
@@ -15,7 +17,11 @@ async function startBot(): Promise<void> {
   // 1. Instantiate the WhatsApp client
   const client = new Client({
     authStrategy: new LocalAuth(),
-    puppeteer: { headless: true },
+    puppeteer: {
+      headless: true,
+      executablePath: puppeteer.executablePath(),
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    },
   });
 
   // 2. Configure the Google Sheets service
@@ -38,7 +44,9 @@ async function startBot(): Promise<void> {
 
   // 5. Bot is ready
   client.on("ready", () => {
-    console.log(chalk.green("✔️  Yasbot is ready!"));
+    console.log(
+      chalk.green(`✔️  Yasbot is ready! ${format(new Date(), "HH:mm:ss")}`)
+    );
   });
 
   // 6. Route incoming messages to the controller
