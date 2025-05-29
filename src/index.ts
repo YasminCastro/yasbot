@@ -6,9 +6,10 @@ import puppeteer from "puppeteer";
 import { format } from "date-fns";
 
 import { BotActions } from "./actions/BotActions";
-import { GoogleSheetsService } from "./services/GoogleSheetsService";
-import { SPREADSHEET_ID, GOOGLE_APPLICATION_CREDENTIALS } from "./config";
+import { BIRTHDAY_COLLECTION, DB_NAME, MONGO_URI } from "./config";
 import { MessageController } from "./controllers/MessageController";
+import { BotBirthday } from "./actions/BotBirthday";
+import { MongoService } from "./services/MongoService";
 
 /**
  * Initializes and starts the bot
@@ -24,15 +25,19 @@ async function startBot(): Promise<void> {
     },
   });
 
-  // 2. Configure the Google Sheets service
-  const sheetsService = new GoogleSheetsService({
-    spreadsheetId: SPREADSHEET_ID,
-    credentialsPath: GOOGLE_APPLICATION_CREDENTIALS,
-  });
+  // 2. Configure t services
+  const mongoService = new MongoService(
+    MONGO_URI,
+    DB_NAME,
+    BIRTHDAY_COLLECTION
+  );
+  await mongoService.connect();
 
   // 3. Create BotActions and MessageController
-  const actions = new BotActions(sheetsService);
-  const controller = new MessageController(actions);
+  const actions = new BotActions();
+  const birthday = new BotBirthday(mongoService);
+
+  const controller = new MessageController(actions, birthday);
 
   // 4. Display QR code for login
   client.on("qr", (qr: string) => {

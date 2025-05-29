@@ -16,10 +16,12 @@ function requireEnv(key: string): string {
 }
 
 // Variáveis obrigatórias
-export const SPREADSHEET_ID = requireEnv("SPREADSHEET_ID");
-export const GOOGLE_APPLICATION_CREDENTIALS = requireEnv(
-  "GOOGLE_APPLICATION_CREDENTIALS"
-);
+export const MONGO_URI = requireEnv("MONGO_URI");
+export const DB_NAME = requireEnv("DB_NAME");
+export const BIRTHDAY_COLLECTION = requireEnv("BIRTHDAY_COLLECTION");
+
+const adminNumbers = requireEnv("ADMIN_NUMBERS");
+export const ADMIN_NUMBERS = adminNumbers.split(",");
 
 // Variáveis opcionais com defaults
 export const SHEET_NAME = process.env.SHEET_NAME ?? "Página1";
