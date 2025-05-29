@@ -47,6 +47,11 @@ export class MessageController {
         await this.birthday.getGuests(message);
         return;
       }
+
+      if (text.includes("@send-invitation")) {
+        await this.birthday.sendInvitation(message);
+        return;
+      }
     }
 
     // // Trigger the presence confirmation action

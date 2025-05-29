@@ -6,7 +6,7 @@ import { MongoService } from "../services/MongoService";
  * Class responsible for handling all bot actions
  */
 export class BotBirthday {
-  constructor(private mongo: MongoService) {}
+  constructor(private mongo: MongoService, private client: Client) {}
 
   /**
    * Add guests to the birthday list
@@ -54,7 +54,7 @@ export class BotBirthday {
    * Get birthday list
    */
   public async getGuests(message: Message): Promise<void> {
-    const guests = await this.mongo.getGuests();
+    const guests = await this.mongo.getGuests({});
 
     if (guests.length === 0) {
       await message.reply("📋 A lista de convidados está vazia.");
@@ -71,6 +71,38 @@ export class BotBirthday {
     const reply = ["📋 *Lista atual de convidados*", ...lines].join("\n");
 
     await message.reply(reply);
+  }
+
+  /**
+   * Get birthday list
+   */
+  public async sendInvitation(message: Message): Promise<void> {
+    const guests = await this.mongo.getGuests({ receivedInvitation: false });
+
+    if (guests.length === 0) {
+      await message.reply("📋 Todos os convidados já receberam o convite.");
+      return;
+    }
+
+    await message.reply("📩 Enviando convite para os convidados...");
+
+    for (const guest of guests) {
+      const chatId = `55${guest.number}@c.us`;
+      const text =
+        `🎂 Hello ${guest.name}! You’re invited to my birthday party on XX/XX. 🎉\n` +
+        `Please reply with "sim" to confirm your attendance.`;
+      try {
+        await this.client.sendMessage(chatId, text);
+        await this.mongo.markInvited(guest.number);
+      } catch (err) {
+        console.error(`❌ Failed to send to ${guest.number}:`, err);
+      }
+      await new Promise((res) => setTimeout(res, 500));
+    }
+
+    await message.reply(
+      `✅ Convite enviado para todos os ${guests.length} convidados!`
+    );
   }
 
   /**

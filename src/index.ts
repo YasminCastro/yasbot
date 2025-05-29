@@ -35,7 +35,7 @@ async function startBot(): Promise<void> {
 
   // 3. Create BotActions and MessageController
   const actions = new BotActions();
-  const birthday = new BotBirthday(mongoService);
+  const birthday = new BotBirthday(mongoService, client);
 
   const controller = new MessageController(actions, birthday);
 

@@ -7,8 +7,10 @@ export interface Guest {
   name: string;
   number: string;
   addedAt: Date;
+  receivedInvitation?: boolean;
   confirmed?: boolean;
   confirmedAt?: Date;
+  invitedAt?: Date;
 }
 
 /**
@@ -60,6 +62,7 @@ export class MongoService {
       number,
       addedAt: new Date(),
       confirmed: false,
+      receivedInvitation: false,
     });
 
     return response.acknowledged;
@@ -85,14 +88,24 @@ export class MongoService {
   /**
    * Retrieves all guests from the collection.
    */
-  public async getGuests(): Promise<Guest[]> {
+  public async getGuests(query: any): Promise<Guest[]> {
     try {
-      const guests = await this.guests.find().toArray();
+      const guests = await this.guests.find(query).toArray();
       return guests;
     } catch (err) {
       console.error(chalk.red("❌ Error fetching guests:"), err);
       throw err;
     }
+  }
+
+  /**
+   * Marks a guest as having received an invitation.
+   */
+  public async markInvited(number: string): Promise<void> {
+    await this.guests.updateOne(
+      { number },
+      { $set: { receivedInvitation: true, invitedAt: new Date() } }
+    );
   }
 
   /**
