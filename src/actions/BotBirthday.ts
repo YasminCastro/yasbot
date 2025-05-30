@@ -96,7 +96,7 @@ export class BotBirthday {
     await message.reply("📩 Enviando convite para os convidados...");
 
     const media = MessageMedia.fromFilePath("./assets/yasbot.png");
-    const homeLocation = new Location(-16.625647, -49.247846);
+    const partyLocation = this.birthdayPartyLoc();
 
     for (const guest of guests) {
       const chatId = `55${guest.number}@c.us`;
@@ -113,7 +113,7 @@ export class BotBirthday {
         `Você pode confirmar até *16/07* a qualquer momento.`;
       try {
         await this.client.sendMessage(chatId, media, { caption: text });
-        await this.client.sendMessage(chatId, homeLocation);
+        await this.client.sendMessage(chatId, partyLocation);
 
         await this.mongo.markInvited(guest.number);
       } catch (err) {
@@ -191,9 +191,24 @@ export class BotBirthday {
   }
 
   /**
+   * Sends the location of the birthday party
+   */
+  public async getLocalization(message: Message): Promise<void> {
+    await message.reply(this.birthdayPartyLoc());
+    return;
+  }
+
+  /**
    * Gets the text of the message and removes the command prefix
    */
   private getTextAndRemoveCommand(message: Message, command: string) {
     return message.body.replace(command, "").trim();
+  }
+
+  /**
+   * Localization of the birthday party
+   */
+  private birthdayPartyLoc() {
+    return new Location(-16.625647, -49.247846);
   }
 }
