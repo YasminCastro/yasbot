@@ -207,6 +207,23 @@ export class BotBirthday {
   }
 
   /**
+   * Sends admin commands and information
+   */
+  public async admin(message: Message): Promise<void> {
+    const informationText =
+      "🤔 *Comandos*: \n" +
+      "\n" +
+      "• @add-guest <nome> <numero> \n" +
+      "• @remove-guest <numbero> \n" +
+      `• @get-guests \n` +
+      `• @send-invitation \n` +
+      `• @send-reminder`;
+
+    await message.reply(informationText);
+    return;
+  }
+
+  /**
    * Gets the text of the message and removes the command prefix
    */
   private getTextAndRemoveCommand(message: Message, command: string) {

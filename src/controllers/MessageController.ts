@@ -30,6 +30,40 @@ export class MessageController {
       return;
     }
 
+    if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
+      console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
+      // If the sender is an admin, you can add more commands here
+      if (text.includes("@add-guest")) {
+        await this.birthday.addGuest(message, "@add-guest");
+        return;
+      }
+
+      if (text.includes("@remove-guest")) {
+        await this.birthday.removeGuest(message, "@remove-guest");
+        return;
+      }
+
+      if (text.includes("@get-guests")) {
+        await this.birthday.getGuests(message);
+        return;
+      }
+
+      if (text.includes("@send-invitation")) {
+        await this.birthday.sendInvites(message);
+        return;
+      }
+
+      // if(text.includes("@send-reminder")) {
+      //   await this.birthday.sendReminder(message);
+      //   return;
+      // }
+
+      if (text.includes("@admin")) {
+        await this.birthday.admin(message);
+        return;
+      }
+    }
+
     if (text === "!confirmar") {
       await this.birthday.confirmPresence(message);
       return;
@@ -53,30 +87,6 @@ export class MessageController {
     if (text === "!convite") {
       await this.birthday.sendInvite(message);
       return;
-    }
-
-    if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
-      console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
-      // If the sender is an admin, you can add more commands here
-      if (text.includes("@add-guest")) {
-        await this.birthday.addGuest(message, "@add-guest");
-        return;
-      }
-
-      if (text.includes("@remove-guest")) {
-        await this.birthday.removeGuest(message, "@remove-guest");
-        return;
-      }
-
-      if (text.includes("@get-guests")) {
-        await this.birthday.getGuests(message);
-        return;
-      }
-
-      if (text.includes("@send-invitation")) {
-        await this.birthday.sendInvites(message);
-        return;
-      }
     }
 
     // If no command matched, reply with a default message
