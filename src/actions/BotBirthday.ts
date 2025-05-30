@@ -127,9 +127,27 @@ export class BotBirthday {
   }
 
   /**
-   * Records the presence of users who reply "sim" in the spreadsheet and sends a confirmation
+   * Confirms the presence of a guest
    */
-  public async confirmPresence(message: Message): Promise<void> {}
+  public async confirmPresence(message: Message): Promise<void> {
+    const senderNumber = message.from.split("@")[0].replace("55", "");
+
+    const guests = await this.mongo.getGuests({ number: senderNumber });
+    const guest = guests[0];
+
+    if (!guest) {
+      await message.reply("❌ Você não está na lista de convidados. ");
+      return;
+    }
+
+    if (guest.confirmed) {
+      await message.reply("✅ Sua presença já está confirmada.");
+      return;
+    }
+
+    await this.mongo.confirmGuest(senderNumber);
+    await message.reply("✅ Sua presença foi confirmada com sucesso!");
+  }
 
   /**
    * Gets the text of the message and removes the command prefix

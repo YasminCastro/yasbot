@@ -30,6 +30,11 @@ export class MessageController {
       return;
     }
 
+    if (text === "!confirmar") {
+      await this.birthday.confirmPresence(message);
+      return;
+    }
+
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
       console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
       // If the sender is an admin, you can add more commands here
