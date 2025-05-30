@@ -50,6 +50,11 @@ export class MessageController {
       return;
     }
 
+    if (text === "!convite") {
+      await this.birthday.sendInvite(message);
+      return;
+    }
+
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
       console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
       // If the sender is an admin, you can add more commands here
@@ -69,15 +74,14 @@ export class MessageController {
       }
 
       if (text.includes("@send-invitation")) {
-        await this.birthday.sendInvitation(message);
+        await this.birthday.sendInvites(message);
         return;
       }
     }
 
-    // // Trigger the presence confirmation action
-    // if (text === "sim") {
-    //   await this.actions.confirmPresence(message);
-    //   return;
-    // }
+    // If no command matched, reply with a default message
+    await message.reply(
+      "❓ Comando desconhecido. Use `!aniversario` para ver os comandos disponíveis."
+    );
   }
 }

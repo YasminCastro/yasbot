@@ -1,6 +1,6 @@
 // src/actions/BotActions.ts
 import { Client, Message, MessageMedia, Location } from "whatsapp-web.js";
-import { MongoService } from "../services/MongoService";
+import { Guest, MongoService } from "../services/MongoService";
 
 /**
  * Class responsible for handling all bot actions
@@ -85,7 +85,7 @@ export class BotBirthday {
   /**
    * send birthday invitations to guests who haven't received them yet
    */
-  public async sendInvitation(message: Message): Promise<void> {
+  public async sendInvites(message: Message): Promise<void> {
     const guests = await this.mongo.getGuests({ receivedInvitation: false });
 
     if (guests.length === 0) {
@@ -95,26 +95,12 @@ export class BotBirthday {
 
     await message.reply("📩 Enviando convite para os convidados...");
 
-    const media = MessageMedia.fromFilePath("./assets/yasbot.png");
+    const media = this.birthdayImage();
     const partyLocation = this.birthdayPartyLoc();
 
     for (const guest of guests) {
-      const chatId = `55${guest.number}@c.us`;
-      const text =
-        `🎉 Olá ${guest.name}!  \n` +
-        `Você está convidado(a) para a minha festa de *25 anos* e comemoração da *colação de grau* 🎓. \n ` +
-        `🗓 *19/07 às 19:00* \n` +
-        `📍 *Minha Casa* \n` +
-        `Traga apenas o que for beber e sua caixa térmica.  \n` +
-        `📝 *Confirmações:* \n` +
-        `• Responda com \`!confirmar\` para confirmar presença  \n` +
-        `• Responda com \`!cancelar\` se não puder comparecer  \n` +
-        `• Responda com \`!aniversário\` para mais informações  \n` +
-        `Você pode confirmar até *16/07* a qualquer momento.`;
       try {
-        await this.client.sendMessage(chatId, media, { caption: text });
-        await this.client.sendMessage(chatId, partyLocation);
-
+        await this.mountInviteAndSend(guest, media, partyLocation);
         await this.mongo.markInvited(guest.number);
       } catch (err) {
         console.error(`❌ Failed to send to ${guest.number}:`, err);
@@ -125,6 +111,26 @@ export class BotBirthday {
     await message.reply(
       `✅ Convite enviado para todos os ${guests.length} convidados!`
     );
+  }
+
+  /**
+   * send birthday invitations to guests who haven't received them yet
+   */
+  public async sendInvite(message: Message): Promise<void> {
+    const senderNumber = message.from.split("@")[0].replace("55", "");
+
+    const guests = await this.mongo.getGuests({ number: senderNumber });
+    const guest = guests[0];
+
+    if (!guest) {
+      await message.reply("❌ Você não está na lista de convidados. ");
+      return;
+    }
+
+    const media = this.birthdayImage();
+    const partyLocation = this.birthdayPartyLoc();
+
+    await this.mountInviteAndSend(guest, media, partyLocation);
   }
 
   /**
@@ -180,9 +186,11 @@ export class BotBirthday {
     const informationText =
       "🤔 *Informações úteis*: \n" +
       "\n" +
-      "• Se tiver qualquer dificuldade, me chame no WhatsApp: *62 98169-5581* \n" +
+      "• Se tiver qualquer dificuldade, chame a Yasmin no WhatsApp: *62 98169-5581* \n" +
       "• Para receber a localização da festa, envie: `!localização` \n" +
-      "• Para saber o que levar, envie: `!levar` \n" +
+      `• Para confirmar presença, envie: \`!confirmar\` \n` +
+      `• Para cancelar presença, envie: \`!cancelar\` \n` +
+      `• Para ver o convite novamente, envie: \`!convite\` \n` +
       "\n" +
       "🚀 Qualquer outra dúvida, é só chamar!";
 
@@ -206,9 +214,45 @@ export class BotBirthday {
   }
 
   /**
-   * Localization of the birthday party
+   * Returns the birthday party location
    */
   private birthdayPartyLoc() {
     return new Location(-16.625647, -49.247846);
+  }
+
+  /**
+   * Returns the birthday image as a MessageMedia object
+   */
+  private birthdayImage() {
+    return MessageMedia.fromFilePath("./assets/yasbot.png");
+  }
+
+  /**
+   * Mounts the birthday invitation and sends it to the guest
+   */
+  private async mountInviteAndSend(
+    guest: Guest,
+    media: MessageMedia,
+    partyLocation: Location
+  ) {
+    const chatId = `55${guest.number}@c.us`;
+    const text =
+      `🎉 Olá ${guest.name}!  \n` +
+      `Você está convidado(a) para a minha festa de *25 anos* e comemoração da *colação de grau* 🎓. \n ` +
+      `🗓 *19/07 às 19:00* \n` +
+      `📍 *Minha Casa* \n` +
+      `Traga apenas o que for beber e sua caixa térmica.  \n` +
+      `📝 *Confirmações:* \n` +
+      `• Responda com \`!confirmar\` para confirmar presença  \n` +
+      `• Responda com \`!cancelar\` se não puder comparecer  \n` +
+      `• Responda com \`!aniversário\` para mais informações  \n` +
+      `Você pode confirmar até *16/07* a qualquer momento.`;
+    try {
+      await this.client.sendMessage(chatId, media, { caption: text });
+      await this.client.sendMessage(chatId, partyLocation);
+    } catch (err) {
+      console.error(`❌ Failed to send to ${guest.number}:`, err);
+    }
+    return;
   }
 }
