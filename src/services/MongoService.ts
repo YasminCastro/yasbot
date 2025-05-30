@@ -111,10 +111,13 @@ export class MongoService {
   /**
    * Marks a guest as confirmed based on their phone number
    */
-  public async confirmGuest(number: string): Promise<void> {
+  public async changeGuestConfirmStatus(
+    number: string,
+    confirmed: boolean
+  ): Promise<void> {
     await this.guests.updateOne(
       { number },
-      { $set: { confirmed: true, confirmedAt: new Date() } }
+      { $set: { confirmed, confirmedAt: new Date() } }
     );
   }
 }

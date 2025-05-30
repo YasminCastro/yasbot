@@ -145,8 +145,31 @@ export class BotBirthday {
       return;
     }
 
-    await this.mongo.confirmGuest(senderNumber);
+    await this.mongo.changeGuestConfirmStatus(senderNumber, true);
     await message.reply("✅ Sua presença foi confirmada com sucesso!");
+  }
+
+  /**
+   * Cancels the presence of a guest
+   */
+  public async cancelPresence(message: Message): Promise<void> {
+    const senderNumber = message.from.split("@")[0].replace("55", "");
+
+    const guests = await this.mongo.getGuests({ number: senderNumber });
+    const guest = guests[0];
+
+    if (!guest) {
+      await message.reply("❌ Você não está na lista de convidados. ");
+      return;
+    }
+
+    if (!guest.confirmed) {
+      await message.reply("❌ Sua presença já foi cancelada.");
+      return;
+    }
+
+    await this.mongo.changeGuestConfirmStatus(senderNumber, false);
+    await message.reply("❌ Sua presença foi cancelada!");
   }
 
   /**
