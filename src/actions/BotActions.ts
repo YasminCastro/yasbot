@@ -1,11 +1,12 @@
 // src/actions/BotActions.ts
-import { Message, GroupChat } from "whatsapp-web.js";
+import { Message, GroupChat, Client } from "whatsapp-web.js";
+import { MongoService } from "../services/MongoService";
 
 /**
  * Class responsible for handling all bot actions
  */
 export class BotActions {
-  constructor() {}
+  constructor(private mongo: MongoService, private client: Client) {}
 
   /**
    * Mentions all participants in a group chat
@@ -36,5 +37,23 @@ export class BotActions {
       "- `!ajuda` ou `!help`: exibe esta mensagem de ajuda.\n\n" +
       "🚀 Qualquer dúvida, é só chamar!";
     await message.reply(helpText);
+  }
+
+  /**
+   * Registers the current group for daily summaries.
+   * Only group admins can run this.
+   * Usage: @add-group
+   */
+  public async addGroup(message: Message): Promise<void> {
+    const chat = await message.getChat();
+    if (!chat.isGroup) {
+      await message.reply("❌ Esse comando só pode ser usado em grupos.");
+      return;
+    }
+    const group = chat as GroupChat;
+
+    const groupId = group.id._serialized;
+    const added = await this.mongo.addGroup(groupId);
+    await message.reply(added.message);
   }
 }

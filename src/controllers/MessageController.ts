@@ -18,7 +18,8 @@ export class MessageController {
     if (message.fromMe) return;
 
     const text = message.body.trim().toLowerCase();
-    const senderNumber = message.from.split("@")[0];
+    const authorId = message.author ?? message.from;
+    const senderNumber = authorId.split("@")[0];
 
     if (text === "!all" || text === "!todos") {
       await this.actions.mentionAll(message);
@@ -62,36 +63,41 @@ export class MessageController {
         await this.birthday.admin(message);
         return;
       }
+
+      if (text.includes("@add-group")) {
+        await this.actions.addGroup(message);
+        return;
+      }
     }
 
-    if (text === "!confirmar") {
-      await this.birthday.confirmPresence(message);
-      return;
-    }
+    // if (text === "!confirmar") {
+    //   await this.birthday.confirmPresence(message);
+    //   return;
+    // }
 
-    if (text === "!cancelar") {
-      await this.birthday.cancelPresence(message);
-      return;
-    }
+    // if (text === "!cancelar") {
+    //   await this.birthday.cancelPresence(message);
+    //   return;
+    // }
 
-    if (text === "!aniversário" || text === "!aniversario") {
-      await this.birthday.getInformation(message);
-      return;
-    }
+    // if (text === "!aniversário" || text === "!aniversario") {
+    //   await this.birthday.getInformation(message);
+    //   return;
+    // }
 
-    if (text === "!localização") {
-      await this.birthday.getLocalization(message);
-      return;
-    }
+    // if (text === "!localização") {
+    //   await this.birthday.getLocalization(message);
+    //   return;
+    // }
 
-    if (text === "!convite") {
-      await this.birthday.sendInvite(message);
-      return;
-    }
+    // if (text === "!convite") {
+    //   await this.birthday.sendInvite(message);
+    //   return;
+    // }
 
-    // If no command matched, reply with a default message
-    await message.reply(
-      "❓ Comando desconhecido. Use `!aniversario` para ver os comandos disponíveis."
-    );
+    // // If no command matched, reply with a default message
+    // await message.reply(
+    //   "❓ Comando desconhecido. Use `!aniversario` para ver os comandos disponíveis."
+    // );
   }
 }

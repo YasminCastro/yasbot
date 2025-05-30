@@ -6,7 +6,7 @@ import puppeteer from "puppeteer";
 import { format } from "date-fns";
 
 import { BotActions } from "./actions/BotActions";
-import { BIRTHDAY_COLLECTION, DB_NAME, MONGO_URI } from "./config";
+import { DB_NAME, MONGO_URI } from "./config";
 import { MessageController } from "./controllers/MessageController";
 import { BotBirthday } from "./actions/BotBirthday";
 import { MongoService } from "./services/MongoService";
@@ -26,15 +26,20 @@ async function startBot(): Promise<void> {
   });
 
   // 2. Configure t services
+  const guestCollection = "guests";
+  const msgCollection = "messages";
+  const groupsCollection = "groups";
   const mongoService = new MongoService(
     MONGO_URI,
     DB_NAME,
-    BIRTHDAY_COLLECTION
+    guestCollection,
+    msgCollection,
+    groupsCollection
   );
   await mongoService.connect();
 
   // 3. Create BotActions and MessageController
-  const actions = new BotActions();
+  const actions = new BotActions(mongoService, client);
   const birthday = new BotBirthday(mongoService, client);
 
   const controller = new MessageController(actions, birthday);

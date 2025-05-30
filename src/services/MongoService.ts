@@ -13,12 +13,22 @@ export interface Guest {
   invitedAt?: Date;
 }
 
+export interface LoggedMessage {
+  _id?: string;
+  message: string;
+  sender: string;
+  timestamp: Date;
+  groupId?: string;
+}
+
 /**
  * Service to manage MongoDB connection and guest operations
  */
 export class MongoService {
   private client: MongoClient;
   private guests!: Collection<Guest>;
+  private groups!: Collection<{ groupId: string }>;
+  private messages!: Collection<LoggedMessage>;
 
   /**
    * Initializes the MongoService with the given connection parameters
@@ -26,9 +36,10 @@ export class MongoService {
   constructor(
     private uri: string,
     private dbName: string,
-    private collectionName: string
+    private guestCollection: string,
+    private msgCollection: string,
+    private groupsCollection: string
   ) {
-    // Create a new MongoClient instance
     this.client = new MongoClient(this.uri);
   }
 
@@ -36,22 +47,24 @@ export class MongoService {
    * Connects to the MongoDB server and initializes the guests collection
    */
   public async connect(): Promise<void> {
-    try {
-      await this.client.connect();
-      this.guests = this.client
-        .db(this.dbName)
-        .collection<Guest>(this.collectionName);
+    await this.client.connect();
+    const db = this.client.db(this.dbName);
+    this.guests = db.collection(this.guestCollection);
+    this.messages = db.collection(this.msgCollection);
+    this.groups = db.collection(this.groupsCollection);
 
-      await this.guests.createIndex(
-        { number: 1 },
-        { unique: true, name: "unique_number_idx" }
-      );
-      console.log(chalk.cyan("Successfully connected to MongoDB!"));
-    } catch (error) {
-      console.error(chalk.red("Error connecting to MongoDB:"), error);
-      throw error;
-    }
+    // índices
+    await this.guests.createIndex(
+      { number: 1 },
+      { unique: true, name: "unique_number_idx" }
+    );
+    await this.messages.createIndex({ timestamp: -1 });
+    await this.groups.createIndex({ groupId: 1 }, { unique: true });
+
+    console.log(chalk.cyan("✅ MongoDB connected."));
   }
+
+  // #region Guest Operations
 
   /**
    * Adds a new guest to the collection
@@ -119,4 +132,50 @@ export class MongoService {
       { $set: { confirmed, confirmedAt: new Date() } }
     );
   }
+
+  // #endregion
+
+  // #region Groups Operations
+
+  /**
+   * Adds a group to the list of those receiving the daily summary.
+   *
+   */
+  public async addGroup(
+    groupId: string
+  ): Promise<{ acknowledged: boolean; message: string }> {
+    try {
+      const res = await this.groups.insertOne({ groupId });
+      return {
+        acknowledged: res.acknowledged,
+        message: "Grupo adicionado com sucesso",
+      };
+    } catch (err: any) {
+      if (err.code === 11000) {
+        return {
+          acknowledged: false,
+          message: "Grupo já foi adicionado anteriormente",
+        };
+      }
+      console.error(chalk.red("❌ Error registering group:"), err);
+      return {
+        acknowledged: false,
+        message: "Erro ao registrar grupo",
+      };
+    }
+  }
+
+  /**
+   * Retrieves all groupIds registered for daily summary.
+   */
+
+  public async getGroups(): Promise<string[]> {
+    const docs = await this.groups.find().toArray();
+    return docs.map((d) => d.groupId);
+  }
+
+  // #endregion
+
+  // #region Messages Operations
+  // #endregion
 }
