@@ -109,6 +109,7 @@ export class BotBirthday {
         `📝 *Confirmações:* \n` +
         `• Responda com \`!confirmar\` para confirmar presença  \n` +
         `• Responda com \`!cancelar\` se não puder comparecer  \n` +
+        `• Responda com \`!aniversário\` para mais informações  \n` +
         `Você pode confirmar até *16/07* a qualquer momento.`;
       try {
         await this.client.sendMessage(chatId, media, { caption: text });
@@ -170,6 +171,23 @@ export class BotBirthday {
 
     await this.mongo.changeGuestConfirmStatus(senderNumber, false);
     await message.reply("❌ Sua presença foi cancelada!");
+  }
+
+  /**
+   * Sends useful information and quick-reply commands
+   */
+  public async getInformation(message: Message): Promise<void> {
+    const informationText =
+      "🤔 *Informações úteis*: \n" +
+      "\n" +
+      "• Se tiver qualquer dificuldade, me chame no WhatsApp: *62 98169-5581* \n" +
+      "• Para receber a localização da festa, envie: `!localização` \n" +
+      "• Para saber o que levar, envie: `!levar` \n" +
+      "\n" +
+      "🚀 Qualquer outra dúvida, é só chamar!";
+
+    await message.reply(informationText);
+    return;
   }
 
   /**
