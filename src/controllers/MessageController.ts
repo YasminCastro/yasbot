@@ -1,5 +1,5 @@
 // src/controllers/MessageController.ts
-import { Message } from "whatsapp-web.js";
+import { GroupChat, Message } from "whatsapp-web.js";
 import { BotActions } from "../actions/BotActions";
 import { BotBirthday } from "../actions/BotBirthday";
 import { ADMIN_NUMBERS } from "../config";
@@ -20,17 +20,9 @@ export class MessageController {
     const text = message.body.trim().toLowerCase();
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
+    const chat = await message.getChat();
 
-    if (text === "!all" || text === "!todos") {
-      await this.actions.mentionAll(message);
-      return;
-    }
-
-    if (text === "!help" || text === "!ajuda") {
-      await this.actions.help(message);
-      return;
-    }
-
+    // #region ADM Commands
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
       console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
       // If the sender is an admin, you can add more commands here
@@ -69,6 +61,22 @@ export class MessageController {
         return;
       }
     }
+    // endregion
+
+    // #region General Commands
+    if (text === "!all" || text === "!todos") {
+      await this.actions.mentionAll(message);
+      return;
+    }
+
+    if (text === "!help" || text === "!ajuda") {
+      await this.actions.help(message);
+      return;
+    }
+
+    // endregion
+
+    // #region Birthday Commands
 
     // if (text === "!confirmar") {
     //   await this.birthday.confirmPresence(message);
@@ -99,5 +107,16 @@ export class MessageController {
     // await message.reply(
     //   "❓ Comando desconhecido. Use `!aniversario` para ver os comandos disponíveis."
     // );
+
+    // endregion
+
+    // #region Groups Commands
+    if (chat.isGroup) {
+      const group = chat as GroupChat;
+      const groupId = group.id._serialized;
+      await this.actions.addMessage(message, groupId);
+    }
+
+    // endregion
   }
 }

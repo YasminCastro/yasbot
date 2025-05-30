@@ -21,13 +21,17 @@ export interface LoggedMessage {
   groupId?: string;
 }
 
+export interface Group {
+  groupId: string;
+}
+
 /**
  * Service to manage MongoDB connection and guest operations
  */
 export class MongoService {
   private client: MongoClient;
   private guests!: Collection<Guest>;
-  private groups!: Collection<{ groupId: string }>;
+  private groups!: Collection<Group>;
   private messages!: Collection<LoggedMessage>;
 
   /**
@@ -169,13 +173,35 @@ export class MongoService {
    * Retrieves all groupIds registered for daily summary.
    */
 
-  public async getGroups(): Promise<string[]> {
-    const docs = await this.groups.find().toArray();
-    return docs.map((d) => d.groupId);
+  public async getGroups(filter: Filter<Group> = {}): Promise<string[]> {
+    const groups = await this.groups.find(filter).toArray();
+    return groups.map((d) => d.groupId);
   }
 
   // #endregion
 
   // #region Messages Operations
+  /**
+   *  Adds a message to the messages collection.
+   */
+  public async addMessage(
+    groupId: string,
+    message: string,
+    sender: string
+  ): Promise<boolean> {
+    try {
+      const res = await this.messages.insertOne({
+        groupId,
+        message,
+        timestamp: new Date(),
+        sender,
+      });
+      return res.acknowledged;
+    } catch (err: any) {
+      console.error(chalk.red("❌ Error registering group:"), err);
+      return false;
+    }
+  }
+
   // #endregion
 }

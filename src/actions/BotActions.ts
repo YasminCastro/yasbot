@@ -56,4 +56,24 @@ export class BotActions {
     const added = await this.mongo.addGroup(groupId);
     await message.reply(added.message);
   }
+
+  /**
+   * Registers the current message for daily summaries.
+   */
+  public async addMessage(message: Message, groupId: string): Promise<void> {
+    // check if groups is registered
+
+    const isRegistered = await this.mongo.getGroups({ groupId });
+
+    if (isRegistered.length === 0) {
+      return;
+    }
+
+    const text = message.body.trim();
+    const authorId = message.author ?? message.from;
+    const senderNumber = authorId.split("@")[0].replace("55", "");
+
+    //save message
+    await this.mongo.addMessage(groupId, text, senderNumber);
+  }
 }
