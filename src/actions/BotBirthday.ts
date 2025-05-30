@@ -1,5 +1,5 @@
 // src/actions/BotActions.ts
-import { Client, Message } from "whatsapp-web.js";
+import { Client, Message, MessageMedia, Location } from "whatsapp-web.js";
 import { MongoService } from "../services/MongoService";
 
 /**
@@ -83,7 +83,7 @@ export class BotBirthday {
   }
 
   /**
-   * Get birthday list
+   * send birthday invitations to guests who haven't received them yet
    */
   public async sendInvitation(message: Message): Promise<void> {
     const guests = await this.mongo.getGuests({ receivedInvitation: false });
@@ -95,13 +95,25 @@ export class BotBirthday {
 
     await message.reply("📩 Enviando convite para os convidados...");
 
+    const media = MessageMedia.fromFilePath("./assets/yasbot.png");
+    const homeLocation = new Location(-16.625647, -49.247846);
+
     for (const guest of guests) {
       const chatId = `55${guest.number}@c.us`;
       const text =
-        `🎂 Hello ${guest.name}! You’re invited to my birthday party on XX/XX. 🎉\n` +
-        `Please reply with "sim" to confirm your attendance.`;
+        `🎉 Olá ${guest.name}!  \n` +
+        `Você está convidado(a) para a minha festa de *25 anos* e comemoração da *colação de grau* 🎓. \n ` +
+        `🗓 *19/07 às 19:00* \n` +
+        `📍 *Minha Casa* \n` +
+        `Traga apenas o que for beber e sua caixa térmica.  \n` +
+        `📝 *Confirmações:* \n` +
+        `• Responda com \`!confirmar\` para confirmar presença  \n` +
+        `• Responda com \`!cancelar\` se não puder comparecer  \n` +
+        `Você pode confirmar até *16/07* a qualquer momento.`;
       try {
-        await this.client.sendMessage(chatId, text);
+        await this.client.sendMessage(chatId, media, { caption: text });
+        await this.client.sendMessage(chatId, homeLocation);
+
         await this.mongo.markInvited(guest.number);
       } catch (err) {
         console.error(`❌ Failed to send to ${guest.number}:`, err);
