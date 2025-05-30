@@ -1,6 +1,6 @@
 // src/services/MongoService.ts
 import chalk from "chalk";
-import { MongoClient, Collection, DeleteResult } from "mongodb";
+import { MongoClient, Collection, DeleteResult, Filter } from "mongodb";
 
 export interface Guest {
   _id?: string;
@@ -61,7 +61,6 @@ export class MongoService {
       name,
       number,
       addedAt: new Date(),
-      confirmed: false,
       receivedInvitation: false,
     });
 
@@ -88,9 +87,9 @@ export class MongoService {
   /**
    * Retrieves all guests from the collection.
    */
-  public async getGuests(query: any): Promise<Guest[]> {
+  public async getGuests(filter: Filter<Guest> = {}): Promise<Guest[]> {
     try {
-      const guests = await this.guests.find(query).toArray();
+      const guests = await this.guests.find(filter).toArray();
       return guests;
     } catch (err) {
       console.error(chalk.red("❌ Error fetching guests:"), err);

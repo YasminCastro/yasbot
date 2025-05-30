@@ -63,7 +63,7 @@ export class BotBirthday {
    * Get birthday list
    */
   public async getGuests(message: Message): Promise<void> {
-    const guests = await this.mongo.getGuests({});
+    const guests = await this.mongo.getGuests();
 
     if (guests.length === 0) {
       await message.reply("📋 A lista de convidados está vazia.");
@@ -102,6 +102,46 @@ export class BotBirthday {
       try {
         await this.mountInviteAndSend(guest, media, partyLocation);
         await this.mongo.markInvited(guest.number);
+      } catch (err) {
+        console.error(`❌ Failed to send to ${guest.number}:`, err);
+      }
+      await new Promise((res) => setTimeout(res, 500));
+    }
+
+    await message.reply(
+      `✅ Convite enviado para todos os ${guests.length} convidados!`
+    );
+  }
+
+  /**
+   * sends a reminder to guests who haven't confirm the invitation yet
+   */
+  public async sendReminder(message: Message): Promise<void> {
+    const guests = await this.mongo.getGuests({
+      confirmed: { $exists: false },
+    });
+
+    if (guests.length === 0) {
+      await message.reply("📋 Todos os convidados já confirmaram o convite.");
+      return;
+    }
+
+    await message.reply("📩 Enviando convite para os convidados...");
+
+    for (const guest of guests) {
+      const chatId = `55${guest.number}@c.us`;
+      const text =
+        "🔔 Olá " +
+        guest.name +
+        "! \n" +
+        "Você ainda não confirmou sua presença na minha festa de *25 anos* e colação de grau, " +
+        "que acontece em *19/07 às 19h* na minha casa. \n\n" +
+        "• Responda com `!confirmar` para confirmar que você vai. \n" +
+        "• Responda com `!convite` para receber o convite novamente. \n\n" +
+        "Aguardo sua resposta! 🎉";
+
+      try {
+        await this.client.sendMessage(chatId, text);
       } catch (err) {
         console.error(`❌ Failed to send to ${guest.number}:`, err);
       }
@@ -214,7 +254,7 @@ export class BotBirthday {
       "🤔 *Comandos*: \n" +
       "\n" +
       "• @add-guest <nome> <numero> \n" +
-      "• @remove-guest <numbero> \n" +
+      "• @remove-guest <numero> \n" +
       `• @get-guests \n` +
       `• @send-invitation \n` +
       `• @send-reminder`;

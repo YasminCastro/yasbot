@@ -53,10 +53,10 @@ export class MessageController {
         return;
       }
 
-      // if(text.includes("@send-reminder")) {
-      //   await this.birthday.sendReminder(message);
-      //   return;
-      // }
+      if (text.includes("@send-reminder")) {
+        await this.birthday.sendReminder(message);
+        return;
+      }
 
       if (text.includes("@admin")) {
         await this.birthday.admin(message);
