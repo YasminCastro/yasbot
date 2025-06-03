@@ -13,6 +13,7 @@
   "type": "commonjs",
   "description": "",
   "dependencies": {
+    "@types/qrcode-terminal": "^0.12.2",
     "chalk": "^5.4.1",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
@@ -25,7 +26,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.21",
-    "@types/qrcode-terminal": "^0.12.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.8.3"
