@@ -69,10 +69,10 @@ export class MessageController {
       return;
     }
 
-    if (text === "!help" || text === "!ajuda") {
-      await this.actions.help(message);
-      return;
-    }
+    // if (text === "!help" || text === "!ajuda") {
+    //   await this.actions.help(message);
+    //   return;
+    // }
 
     // endregion
 
@@ -115,10 +115,10 @@ export class MessageController {
       const group = chat as GroupChat;
       const groupId = group.id._serialized;
 
-      if (text === "!resumo") {
-        await this.actions.sendChatSummary(groupId);
-        return;
-      }
+      // if (text === "!resumo") {
+      //   await this.actions.sendChatSummary(groupId);
+      //   return;
+      // }
 
       await this.actions.addMessage(message, groupId);
     }

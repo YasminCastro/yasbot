@@ -218,5 +218,28 @@ export class MongoService {
     }
   }
 
+  /**
+   * Deletes all messages older than the given Date.
+   *
+   */
+  public async deleteMessagesOlderThan(cutoffDate: Date): Promise<number> {
+    try {
+      const result = await this.messages.deleteMany({
+        timestamp: { $lt: cutoffDate },
+      });
+      console.log(
+        chalk.green(
+          `🗑️ Deleted ${
+            result.deletedCount
+          } messages older than ${cutoffDate.toISOString()}`
+        )
+      );
+      return result.deletedCount ?? 0;
+    } catch (err) {
+      console.error(chalk.red("❌ Error deleting old messages:"), err);
+      throw err;
+    }
+  }
+
   // #endregion
 }

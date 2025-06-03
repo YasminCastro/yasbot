@@ -4,6 +4,7 @@ import qrcode from "qrcode-terminal";
 import chalk from "chalk";
 import puppeteer from "puppeteer";
 import { format } from "date-fns";
+import cron from "node-cron";
 
 import { BotActions } from "./actions/BotActions";
 import { DB_NAME, MONGO_URI } from "./config";
@@ -70,6 +71,47 @@ async function startBot(): Promise<void> {
 
   // 7. Initialize the connection
   await client.initialize();
+
+  // 8) Schedule daily summary at 23:59 (America/Sao_Paulo)
+  cron.schedule(
+    "59 23 * * *",
+    async () => {
+      console.log(
+        chalk.magenta(
+          "🔔 Running scheduled sendChatSummary for all registered groups"
+        )
+      );
+      try {
+        // fetch all registered group IDs
+        const groupIds = await mongoService.getGroups();
+        for (const groupId of groupIds) {
+          await actions.sendChatSummary(groupId);
+        }
+      } catch (err) {
+        console.error(chalk.red("❌ Error in daily summary job:"), err);
+      }
+    },
+    {
+      timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
+    }
+  );
+
+  // 9) Schedule cleanup at 00:00 (America/Sao_Paulo)
+  cron.schedule(
+    "0 0 * * *",
+    async () => {
+      console.log(chalk.yellow("🗑️ Running scheduled cleanup of old messages"));
+      try {
+        const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+        await mongoService.deleteMessagesOlderThan(twoDaysAgo);
+      } catch (err) {
+        console.error(chalk.red("❌ Error in cleanup job:"), err);
+      }
+    },
+    {
+      timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
+    }
+  );
 }
 
 startBot().catch((err) => {
