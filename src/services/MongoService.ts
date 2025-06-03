@@ -203,5 +203,20 @@ export class MongoService {
     }
   }
 
+  /**
+   *  Adds a message to the messages collection.
+   */
+  public async getMessages(
+    filter: Filter<LoggedMessage> = {}
+  ): Promise<LoggedMessage[]> {
+    try {
+      const messages = await this.messages.find(filter).toArray();
+      return messages;
+    } catch (err: any) {
+      console.error(chalk.red("❌ Error fetching messages:"), err);
+      throw err;
+    }
+  }
+
   // #endregion
 }

@@ -114,6 +114,12 @@ export class MessageController {
     if (chat.isGroup) {
       const group = chat as GroupChat;
       const groupId = group.id._serialized;
+
+      if (text === "!resumo") {
+        await this.actions.sendChatSummary(message, groupId);
+        return;
+      }
+
       await this.actions.addMessage(message, groupId);
     }
 
