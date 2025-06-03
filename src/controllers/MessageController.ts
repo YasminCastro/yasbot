@@ -116,7 +116,7 @@ export class MessageController {
       const groupId = group.id._serialized;
 
       if (text === "!resumo") {
-        await this.actions.sendChatSummary(message, groupId);
+        await this.actions.sendChatSummary(groupId);
         return;
       }
 

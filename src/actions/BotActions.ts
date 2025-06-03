@@ -80,10 +80,7 @@ export class BotActions {
   /**
    *  Sends a chat summary to the group.
    */
-  public async sendChatSummary(
-    message: Message,
-    groupId: string
-  ): Promise<void> {
+  public async sendChatSummary(groupId: string): Promise<void> {
     // check if groups is registered
 
     const isRegistered = await this.mongo.getGroups({ groupId });
