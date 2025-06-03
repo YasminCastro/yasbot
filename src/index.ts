@@ -12,22 +12,13 @@ import { MessageController } from "./controllers/MessageController";
 import { BotBirthday } from "./actions/BotBirthday";
 import { MongoService } from "./services/MongoService";
 
-import mongoose from "mongoose";
-import { MongoStore } from "wwebjs-mongo";
-
 /**
  * Initializes and starts the bot
  */
 async function startBot(): Promise<void> {
-  await mongoose.connect(MONGO_URI);
-  const store = new MongoStore({ mongoose: mongoose });
-
   // 1. Instantiate the WhatsApp client
   const client = new Client({
-    authStrategy: new RemoteAuth({
-      store: store,
-      backupSyncIntervalMs: 300_000,
-    }),
+    authStrategy: new LocalAuth(),
     puppeteer: {
       headless: true,
       executablePath: puppeteer.executablePath(),
