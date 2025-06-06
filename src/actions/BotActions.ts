@@ -63,11 +63,11 @@ export class BotActions {
   public async addMessage(message: Message, groupId: string): Promise<void> {
     // check if groups is registered
 
+    if (message.hasMedia) return;
+
     const isRegistered = await this.mongo.getGroups({ groupId });
 
-    if (isRegistered.length === 0) {
-      return;
-    }
+    if (isRegistered.length === 0) return;
 
     const text = message.body.trim();
     const authorId = message.author ?? message.from;

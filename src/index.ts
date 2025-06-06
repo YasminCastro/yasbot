@@ -1,5 +1,5 @@
 // src/index.ts
-import { Client, LocalAuth, Message, RemoteAuth } from "whatsapp-web.js";
+import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
 import chalk from "chalk";
 import puppeteer from "puppeteer";
