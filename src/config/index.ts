@@ -1,5 +1,6 @@
 // src/config/index.ts
 import * as dotenv from "dotenv";
+import { logger } from "../utils/logger";
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ dotenv.config();
 function requireEnv(key: string): string {
   const value = process.env[key];
   if (!value) {
-    console.error(`❌ Missing required environment variable: ${key}`);
+    logger.error(`❌ Missing required environment variable: ${key}`);
     process.exit(1);
   }
   return value;

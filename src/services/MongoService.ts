@@ -1,6 +1,7 @@
 // src/services/MongoService.ts
 import chalk from "chalk";
 import { MongoClient, Collection, DeleteResult, Filter } from "mongodb";
+import { logger } from "../utils/logger";
 
 export interface Guest {
   _id?: string;
@@ -65,7 +66,7 @@ export class MongoService {
     await this.messages.createIndex({ timestamp: -1 });
     await this.groups.createIndex({ groupId: 1 }, { unique: true });
 
-    console.log(chalk.cyan("✅ MongoDB connected."));
+    logger.info("✅ MongoDB connected.");
   }
 
   // #region Guest Operations
@@ -96,7 +97,7 @@ export class MongoService {
         return false;
       }
     } catch (err) {
-      console.error(chalk.red("❌ Error removing guest:"), err);
+      logger.error("❌ Error removing guest:", err);
       throw err;
     }
   }
@@ -109,7 +110,7 @@ export class MongoService {
       const guests = await this.guests.find(filter).toArray();
       return guests;
     } catch (err) {
-      console.error(chalk.red("❌ Error fetching guests:"), err);
+      logger.error("❌ Error fetching guests:", err);
       throw err;
     }
   }
@@ -161,7 +162,7 @@ export class MongoService {
           message: "Grupo já foi adicionado anteriormente",
         };
       }
-      console.error(chalk.red("❌ Error registering group:"), err);
+      logger.error("❌ Error registering group:", err);
       return {
         acknowledged: false,
         message: "Erro ao registrar grupo",
@@ -227,13 +228,12 @@ export class MongoService {
       const result = await this.messages.deleteMany({
         timestamp: { $lt: cutoffDate },
       });
-      console.log(
-        chalk.green(
-          `🗑️ Deleted ${
-            result.deletedCount
-          } messages older than ${cutoffDate.toISOString()}`
-        )
+      logger.info(
+        `🗑️ Deleted ${
+          result.deletedCount
+        } messages older than ${cutoffDate.toISOString()}`
       );
+
       return result.deletedCount ?? 0;
     } catch (err) {
       console.error(chalk.red("❌ Error deleting old messages:"), err);

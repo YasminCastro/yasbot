@@ -11,6 +11,7 @@ import { DB_NAME, MONGO_URI } from "./config";
 import { MessageController } from "./controllers/MessageController";
 import { BotBirthday } from "./actions/BotBirthday";
 import { MongoService } from "./services/MongoService";
+import { logger } from "./utils/logger";
 
 /**
  * Initializes and starts the bot
@@ -48,16 +49,12 @@ async function startBot(): Promise<void> {
   // 4. Display QR code for login
   client.on("qr", (qr: string) => {
     qrcode.generate(qr, { small: true });
-    console.log(
-      chalk.bgBlueBright("📸 Scan the QR code above to authenticate")
-    );
+    logger.info("📸 Scan the QR code above to authenticate");
   });
 
   // 5. Bot is ready
   client.on("ready", () => {
-    console.log(
-      chalk.green(`✔️  Yasbot is ready! ${format(new Date(), "HH:mm:ss")}`)
-    );
+    logger.info("✔️  Yasbot is ready!");
   });
 
   // 6. Route incoming messages to the controller
@@ -65,7 +62,7 @@ async function startBot(): Promise<void> {
     try {
       await controller.handle(message);
     } catch (err) {
-      console.error(chalk.red("Error processing message:"), err);
+      logger.error("Error processing message:", err);
     }
   });
 
@@ -76,11 +73,10 @@ async function startBot(): Promise<void> {
   cron.schedule(
     "59 23 * * *",
     async () => {
-      console.log(
-        chalk.magenta(
-          "🔔 Running scheduled sendChatSummary for all registered groups"
-        )
+      logger.info(
+        "🔔 Running scheduled sendChatSummary for all registered groups"
       );
+
       try {
         // fetch all registered group IDs
         const groupIds = await mongoService.getGroups();
@@ -88,7 +84,7 @@ async function startBot(): Promise<void> {
           await actions.sendChatSummary(groupId);
         }
       } catch (err) {
-        console.error(chalk.red("❌ Error in daily summary job:"), err);
+        logger.warn("❌ Error in daily summary job:", err);
       }
     },
     {
@@ -100,12 +96,12 @@ async function startBot(): Promise<void> {
   cron.schedule(
     "0 0 * * *",
     async () => {
-      console.log(chalk.yellow("🗑️ Running scheduled cleanup of old messages"));
+      logger.info("🗑️ Running scheduled cleanup of old messages");
       try {
         const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
         await mongoService.deleteMessagesOlderThan(twoDaysAgo);
       } catch (err) {
-        console.error(chalk.red("❌ Error in cleanup job:"), err);
+        logger.warn("❌ Error in cleanup job:", err);
       }
     },
     {
@@ -115,6 +111,6 @@ async function startBot(): Promise<void> {
 }
 
 startBot().catch((err) => {
-  console.error(chalk.red("Error starting Yasbot:"), err);
+  logger.error("Error starting Yasbot:", err);
   process.exit(1);
 });

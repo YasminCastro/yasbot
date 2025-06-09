@@ -4,6 +4,7 @@ import { BotActions } from "../actions/BotActions";
 import { BotBirthday } from "../actions/BotBirthday";
 import { ADMIN_NUMBERS } from "../config";
 import chalk from "chalk";
+import { logger } from "../utils/logger";
 
 /**
  * Controller responsible for handling incoming messages and dispatching the appropriate bot actions
@@ -24,7 +25,7 @@ export class MessageController {
 
     // #region ADM Commands
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
-      console.log(chalk.magenta(`Admin command from ${senderNumber}: ${text}`));
+      logger.info(`Admin command from ${senderNumber}: ${text}`);
       // If the sender is an admin, you can add more commands here
       if (text.includes("@add-guest")) {
         await this.birthday.addGuest(message, "@add-guest");
