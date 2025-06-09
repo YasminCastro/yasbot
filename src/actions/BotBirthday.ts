@@ -13,25 +13,63 @@ export class BotBirthday {
    */
   public async addGuest(message: Message, command: string): Promise<void> {
     const text = this.getTextAndRemoveCommand(message, command);
-
     const parts = text.split(/\s+/).filter(Boolean);
 
+    // mínimo: um nome + ao menos um pedaço do número
     if (parts.length < 2) {
       await message.reply(
-        "❌ Uso: @add-person <Nome> <Número>\n" +
-          "Exemplo: @add-person Maria 11999888777"
+        "❌ Uso: @add-guest <Nome> <Número>\n" +
+          "Exemplos válidos:\n" +
+          " • @add-guest Maria 11999888777\n" +
+          " • @add-guest João +55 11 98765-4321\n"
       );
       return;
     }
 
-    const number = parts.pop()!;
-    const person = parts.join(" ");
+    // encontra onde começa a parte numérica (pode ser +, dígitos, -, parênteses)
+    const firstNumIdx = parts.findIndex((p) => /^\+?[\d\-\(\)]+$/.test(p));
+    if (firstNumIdx <= 0) {
+      await message.reply(
+        "❌ Não encontrei um número válido no comando.\n" +
+          "Use: @add-guest <Nome> <Número>\n" +
+          "Ex.: @add-guest Thays +55 11 99350-0484"
+      );
+      return;
+    }
 
-    const wasGuestAdded = await this.mongo.addGuest(person, number);
+    // separa nome e número
+    const person = parts.slice(0, firstNumIdx).join(" ");
+    const numberRaw = parts.slice(firstNumIdx).join(" ");
+
+    // 1) tira tudo que não é dígito
+    let normalized = numberRaw.replace(/\D+/g, "");
+
+    // 2) remove o "55" do início se for código do Brasil
+    if (
+      normalized.startsWith("55") &&
+      (normalized.length === 12 || normalized.length === 13)
+    ) {
+      normalized = normalized.slice(2);
+    }
+
+    // 3) valida DDD (2 dígitos) + telefone (8 ou 9 dígitos)
+    if (![10, 11].includes(normalized.length)) {
+      await message.reply(
+        "❌ Número inválido. Deve conter DDD + 8 ou 9 dígitos.\n" +
+          "Exemplos:\n" +
+          " • 11999888777\n" +
+          " • +55 62 9181-9229\n" +
+          " • +55 (11) 99350-0484"
+      );
+      return;
+    }
+
+    // grava no banco com o número normalizado
+    const wasGuestAdded = await this.mongo.addGuest(person, normalized);
 
     if (wasGuestAdded) {
       await message.reply(
-        `${person} foi adicionado com sucesso a lista de convidados! 🎉`
+        `${person} foi adicionado com sucesso à lista de convidados! 🎉`
       );
     } else {
       await message.reply(
