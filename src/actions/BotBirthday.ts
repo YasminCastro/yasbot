@@ -15,7 +15,6 @@ export class BotBirthday {
     const text = this.getTextAndRemoveCommand(message, command);
     const parts = text.split(/\s+/).filter(Boolean);
 
-    // mínimo: um nome + ao menos um pedaço do número
     if (parts.length < 2) {
       await message.reply(
         "❌ Uso: @add-guest <Nome> <Número>\n" +
@@ -26,7 +25,6 @@ export class BotBirthday {
       return;
     }
 
-    // encontra onde começa a parte numérica (pode ser +, dígitos, -, parênteses)
     const firstNumIdx = parts.findIndex((p) => /^\+?[\d\-\(\)]+$/.test(p));
     if (firstNumIdx <= 0) {
       await message.reply(
@@ -37,14 +35,10 @@ export class BotBirthday {
       return;
     }
 
-    // separa nome e número
     const person = parts.slice(0, firstNumIdx).join(" ");
     const numberRaw = parts.slice(firstNumIdx).join(" ");
-
-    // 1) tira tudo que não é dígito
     let normalized = numberRaw.replace(/\D+/g, "");
 
-    // 2) remove o "55" do início se for código do Brasil
     if (
       normalized.startsWith("55") &&
       (normalized.length === 12 || normalized.length === 13)
@@ -52,19 +46,16 @@ export class BotBirthday {
       normalized = normalized.slice(2);
     }
 
-    // 3) valida DDD (2 dígitos) + telefone (8 ou 9 dígitos)
     if (![10, 11].includes(normalized.length)) {
       await message.reply(
         "❌ Número inválido. Deve conter DDD + 8 ou 9 dígitos.\n" +
           "Exemplos:\n" +
-          " • 11999888777\n" +
-          " • +55 62 9181-9229\n" +
-          " • +55 (11) 99350-0484"
+          " • 62912345678\n" +
+          " • +55 62 91234-5678\n"
       );
       return;
     }
 
-    // grava no banco com o número normalizado
     const wasGuestAdded = await this.mongo.addGuest(person, normalized);
 
     if (wasGuestAdded) {
@@ -82,17 +73,47 @@ export class BotBirthday {
    * Remove guests from the birthday list
    */
   public async removeGuest(message: Message, command: string): Promise<void> {
-    const number = this.getTextAndRemoveCommand(message, command);
+    const text = this.getTextAndRemoveCommand(message, command).trim();
+    const parts = text.split(/\s+/).filter(Boolean);
 
-    const wasGuestRemoved = await this.mongo.removeGuest(number);
+    if (parts.length < 1) {
+      await message.reply(
+        "❌ Uso: @remove-guest <Número>\n" +
+          "Exemplos válidos:\n" +
+          " • @remove-guest 62912345678\n" +
+          " • @remove-guest +55 62 91234-5678"
+      );
+      return;
+    }
+
+    const numberRaw = parts.join(" ");
+
+    let normalized = numberRaw.replace(/\D+/g, "");
+
+    if (
+      normalized.startsWith("55") &&
+      (normalized.length === 12 || normalized.length === 13)
+    ) {
+      normalized = normalized.slice(2);
+    }
+
+    if (![10, 11].includes(normalized.length)) {
+      await message.reply(
+        "❌ Número inválido. Informe DDD + telefone (8 ou 9 dígitos), opcionalmente com +55.\n" +
+          "Ex.: +55 (11) 99350-0484 ou 11999888777"
+      );
+      return;
+    }
+
+    const wasGuestRemoved = await this.mongo.removeGuest(normalized);
 
     if (wasGuestRemoved) {
       await message.reply(
-        `${number} foi removido com sucesso a lista de convidados!`
+        `${normalized} foi removido com sucesso da lista de convidados! 🎉`
       );
     } else {
       await message.reply(
-        `Não foi possível adicionar ${number} à lista de convidados. Tente novamente mais tarde.`
+        `Não foi possível remover ${normalized} da lista de convidados. Tente novamente mais tarde.`
       );
     }
   }
@@ -108,15 +129,20 @@ export class BotBirthday {
       return;
     }
 
-    const lines = guests.map((g, index) => {
+    const sorted = guests
+      .slice()
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, "pt", { sensitivity: "base" })
+      );
+
+    const lines = sorted.map((g, idx) => {
       const status = g.confirmed
         ? "✅ confirmado"
         : "⏳ aguardando confirmação";
-      return `${index + 1} - ${g.name} (${g.number}) – ${status}`;
+      return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
     });
 
     const reply = ["📋 *Lista atual de convidados*", ...lines].join("\n");
-
     await message.reply(reply);
   }
 
