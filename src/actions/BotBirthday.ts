@@ -136,13 +136,16 @@ export class BotBirthday {
       );
 
     const lines = sorted.map((g, idx) => {
-      const status = g.confirmed
-        ? "✅ confirmado"
-        : "⏳ aguardando confirmação";
+      const status = g.confirmed ? "✅ confirmado" : "⏳ aguardando";
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
     });
 
-    const reply = ["📋 *Lista atual de convidados*", ...lines].join("\n");
+    const totalConfirmed = sorted.filter((g) => g.confirmed).length;
+
+    const reply = [
+      `📋 *Lista atual de convidados* \n Total de convidados: ${sorted.length} \n Total de confirmados: ${totalConfirmed}`,
+      ...lines,
+    ].join("\n");
     await message.reply(reply);
   }
 
@@ -150,6 +153,7 @@ export class BotBirthday {
    * send birthday invitations to guests who haven't received them yet
    */
   public async sendInvites(message: Message): Promise<void> {
+    return;
     const guests = await this.mongo.getGuests({ receivedInvitation: false });
 
     if (guests.length === 0) {
