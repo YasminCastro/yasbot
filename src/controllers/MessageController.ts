@@ -70,10 +70,10 @@ export class MessageController {
       return;
     }
 
-    // if (text === "!help" || text === "!ajuda") {
-    //   await this.actions.help(message);
-    //   return;
-    // }
+    if (text === "!help" || text === "!ajuda") {
+      await this.actions.help(message);
+      return;
+    }
 
     // endregion
 
