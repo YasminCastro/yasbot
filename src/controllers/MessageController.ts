@@ -25,7 +25,7 @@ export class MessageController {
 
     // #region ADM Commands
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
-      logger.info(`Admin command from ${senderNumber}: ${text}`);
+      // logger.info(`Admin command from ${senderNumber}: ${text}`);
       // If the sender is an admin, you can add more commands here
       if (text.includes("@add-guest")) {
         await this.birthday.addGuest(message, "@add-guest");
