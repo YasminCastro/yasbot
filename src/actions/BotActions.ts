@@ -1,6 +1,7 @@
 // src/actions/BotActions.ts
 import { Message, GroupChat, Client } from "whatsapp-web.js";
 import { LoggedMessage, MongoService } from "../services/MongoService";
+import { startOfYesterday, endOfYesterday, format } from "date-fns";
 
 /**
  * Class responsible for handling all bot actions
@@ -99,38 +100,46 @@ export class BotActions {
    *  Sends a chat summary to the group.
    */
   public async sendChatSummary(groupId: string): Promise<void> {
-    // check if groups is registered
-
     const isRegistered = await this.mongo.getGroups({ groupId });
     if (isRegistered.length === 0) return;
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
+    const chat = await this.client.getChatById(groupId);
+    const yesterdayStart = startOfYesterday();
+    const yesterdayEnd = endOfYesterday();
+    const dateString = format(yesterdayStart, "dd/MM/yyyy");
 
-    //get messages
-    const messagesToday = await this.mongo.getMessages({
+    const messages = await this.mongo.getMessages({
       groupId,
-      timestamp: { $gte: todayStart },
+      timestamp: {
+        $gte: yesterdayStart,
+        $lte: yesterdayEnd,
+      },
     });
 
-    // summary text
-    if (messagesToday.length === 0) {
-      const chat = await this.client.getChatById(groupId);
-      await chat.sendMessage("📋 Nenhuma mensagem registrada para hoje.");
+    if (messages.length === 0) {
+      await chat.sendMessage(
+        `📋 Nenhuma mensagem registrada para ${dateString}.`
+      );
       return;
     }
 
-    const total = messagesToday.length;
+    const total = messages.length;
+    const { top3Lines, mentionJids } = await this.getTopSenders(messages);
 
-    const { top3Lines, mentionJids } = await this.getTopSenders(messagesToday);
     const summaryText =
-      "📊 *Resumo do dia* 📊\n" +
+      `📊 *Resumo do dia ${dateString}* 📊\n` +
       `Total de mensagens: *${total}*\n\n` +
       "Top 3 participantes:\n" +
       top3Lines.join("\n");
 
-    const chat = await this.client.getChatById(groupId);
     await chat.sendMessage(summaryText, { mentions: mentionJids });
+
+    await this.mongo.saveGroupDailySummary(
+      groupId,
+      top3Lines,
+      total,
+      yesterdayStart
+    );
   }
 
   private async getTopSenders(messagesToday: LoggedMessage[]) {

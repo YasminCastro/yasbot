@@ -23,7 +23,16 @@ export interface LoggedMessage {
 }
 
 export interface Group {
+  _id?: string;
   groupId: string;
+}
+
+export interface GroupDailySummary {
+  _id?: string;
+  groupId: string;
+  timestamp: Date;
+  totalMessages: number;
+  top3Lines: string[];
 }
 
 /**
@@ -34,6 +43,7 @@ export class MongoService {
   private guests!: Collection<Guest>;
   private groups!: Collection<Group>;
   private messages!: Collection<LoggedMessage>;
+  private groupDailySummary!: Collection<GroupDailySummary>;
 
   /**
    * Initializes the MongoService with the given connection parameters
@@ -43,7 +53,8 @@ export class MongoService {
     private dbName: string,
     private guestCollection: string,
     private msgCollection: string,
-    private groupsCollection: string
+    private groupsCollection: string,
+    private groupDailySummaryCollection: string
   ) {
     this.client = new MongoClient(this.uri);
   }
@@ -57,6 +68,7 @@ export class MongoService {
     this.guests = db.collection(this.guestCollection);
     this.messages = db.collection(this.msgCollection);
     this.groups = db.collection(this.groupsCollection);
+    this.groupDailySummary = db.collection(this.groupDailySummaryCollection);
 
     // índices
     await this.guests.createIndex(
@@ -65,6 +77,7 @@ export class MongoService {
     );
     await this.messages.createIndex({ timestamp: -1 });
     await this.groups.createIndex({ groupId: 1 }, { unique: true });
+    await this.groupDailySummary.createIndex({ timestamp: -1 });
 
     logger.info("✅ MongoDB connected.");
   }
@@ -177,6 +190,30 @@ export class MongoService {
   public async getGroups(filter: Filter<Group> = {}): Promise<string[]> {
     const groups = await this.groups.find(filter).toArray();
     return groups.map((d) => d.groupId);
+  }
+
+  /**
+   * Save the daily summary for all groups.
+   */
+
+  public async saveGroupDailySummary(
+    groupId: string,
+    top3Lines: string[],
+    totalMessages: number,
+    timestamp: Date
+  ): Promise<boolean> {
+    try {
+      const res = await this.groupDailySummary.insertOne({
+        groupId,
+        timestamp,
+        top3Lines,
+        totalMessages,
+      });
+      return res.acknowledged;
+    } catch (err: any) {
+      logger.error("❌ Error saving group daily summary:", err);
+      return false;
+    }
   }
 
   // #endregion

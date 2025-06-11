@@ -31,12 +31,14 @@ async function startBot(): Promise<void> {
   const guestCollection = "guests";
   const msgCollection = "messages";
   const groupsCollection = "groups";
+  const groupDailySummary = "groupsDailySummary";
   const mongoService = new MongoService(
     MONGO_URI,
     DB_NAME,
     guestCollection,
     msgCollection,
-    groupsCollection
+    groupsCollection,
+    groupDailySummary
   );
   await mongoService.connect();
 
@@ -69,9 +71,9 @@ async function startBot(): Promise<void> {
   // 7. Initialize the connection
   await client.initialize();
 
-  // 8) Schedule daily summary at 23:59 (America/Sao_Paulo)
+  // 8) Schedule daily summary at 07:00 (America/Sao_Paulo)
   cron.schedule(
-    "59 23 * * *",
+    "0 7 * * *",
     async () => {
       logger.info(
         "🔔 Running scheduled sendChatSummary for all registered groups"
