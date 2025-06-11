@@ -236,7 +236,7 @@ export class MongoService {
       });
       return res.acknowledged;
     } catch (err: any) {
-      console.error(chalk.red("❌ Error registering group:"), err);
+      logger.error("❌ Error registering group:", err);
       return false;
     }
   }
@@ -251,7 +251,7 @@ export class MongoService {
       const messages = await this.messages.find(filter).toArray();
       return messages;
     } catch (err: any) {
-      console.error(chalk.red("❌ Error fetching messages:"), err);
+      logger.error("❌ Error fetching messages:", err);
       throw err;
     }
   }
@@ -273,7 +273,7 @@ export class MongoService {
 
       return result.deletedCount ?? 0;
     } catch (err) {
-      console.error(chalk.red("❌ Error deleting old messages:"), err);
+      logger.error("❌ Error deleting old messages:", err);
       throw err;
     }
   }

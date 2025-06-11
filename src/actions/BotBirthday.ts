@@ -1,6 +1,7 @@
 // src/actions/BotActions.ts
 import { Client, Message, MessageMedia, Location } from "whatsapp-web.js";
 import { Guest, MongoService } from "../services/MongoService";
+import { logger } from "../utils/logger";
 
 /**
  * Class responsible for handling all bot actions
@@ -171,7 +172,7 @@ export class BotBirthday {
         await this.mountInviteAndSend(guest, media, partyLocation);
         await this.mongo.markInvited(guest.number);
       } catch (err) {
-        console.error(`❌ Failed to send to ${guest.number}:`, err);
+        logger.error(`❌ Failed to send to ${guest.number}:`, err);
       }
       await new Promise((res) => setTimeout(res, 500));
     }
@@ -211,7 +212,7 @@ export class BotBirthday {
       try {
         await this.client.sendMessage(chatId, text);
       } catch (err) {
-        console.error(`❌ Failed to send to ${guest.number}:`, err);
+        logger.error(`❌ Failed to send to ${guest.number}:`, err);
       }
       await new Promise((res) => setTimeout(res, 500));
     }
@@ -376,7 +377,7 @@ export class BotBirthday {
       await this.client.sendMessage(chatId, media, { caption: text });
       await this.client.sendMessage(chatId, partyLocation);
     } catch (err) {
-      console.error(`❌ Failed to send to ${guest.number}:`, err);
+      logger.error(`❌ Failed to send to ${guest.number}:`, err);
     }
     return;
   }
