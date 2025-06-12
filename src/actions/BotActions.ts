@@ -77,6 +77,24 @@ export class BotActions {
   }
 
   /**
+   * Remove the current group for daily summaries.
+   * Only group admins can run this.
+   * Usage: @remove-group
+   */
+  public async removeGroup(message: Message): Promise<void> {
+    const chat = await message.getChat();
+    if (!chat.isGroup) {
+      await message.reply("❌ Esse comando só pode ser usado em grupos.");
+      return;
+    }
+    const group = chat as GroupChat;
+
+    const groupId = group.id._serialized;
+    const added = await this.mongo.removeGroup(groupId);
+    await message.reply(added.message);
+  }
+
+  /**
    * Registers the current message for daily summaries.
    */
   public async addMessage(message: Message, groupId: string): Promise<void> {

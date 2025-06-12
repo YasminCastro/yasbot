@@ -61,6 +61,11 @@ export class MessageController {
         await this.actions.addGroup(message);
         return;
       }
+
+      if (text.includes("@remove-group")) {
+        await this.actions.removeGroup(message);
+        return;
+      }
     }
     // endregion
 

@@ -184,6 +184,28 @@ export class MongoService {
   }
 
   /**
+   * Remove a group to the list of those receiving the daily summary.
+   *
+   */
+  public async removeGroup(
+    groupId: string
+  ): Promise<{ acknowledged: boolean; message: string }> {
+    try {
+      const res = await this.groups.deleteOne({ groupId });
+      return {
+        acknowledged: res.acknowledged,
+        message: "Grupo removido com sucesso",
+      };
+    } catch (err: any) {
+      logger.error("❌ Error remove group:", err);
+      return {
+        acknowledged: false,
+        message: "Erro ao remover grupo",
+      };
+    }
+  }
+
+  /**
    * Retrieves all groupIds registered for daily summary.
    */
 
