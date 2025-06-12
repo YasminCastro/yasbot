@@ -85,8 +85,6 @@ export class BotActions {
 
     const text = message.body ? message.body.trim() : message.type;
 
-    console.log("Message text:", text);
-
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
 
