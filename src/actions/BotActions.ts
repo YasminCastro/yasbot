@@ -83,10 +83,10 @@ export class BotActions {
     const isRegistered = await this.mongo.getGroups({ groupId });
     if (isRegistered.length === 0) return;
 
-    console.log(message.type);
-    console.log(message.body);
+    const text = message.body ? message.body.trim() : message.type;
 
-    const text = message.hasMedia ? message.type : message.body.trim();
+    console.log("Message text:", text);
+
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
 
