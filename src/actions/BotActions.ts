@@ -80,15 +80,13 @@ export class BotActions {
    * Registers the current message for daily summaries.
    */
   public async addMessage(message: Message, groupId: string): Promise<void> {
-    // check if groups is registered
-
-    if (message.hasMedia) return;
-
     const isRegistered = await this.mongo.getGroups({ groupId });
-
     if (isRegistered.length === 0) return;
 
-    const text = message.body.trim();
+    console.log(message.type);
+    console.log(message.body);
+
+    const text = message.hasMedia ? message.type : message.body.trim();
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
 
