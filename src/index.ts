@@ -1,23 +1,20 @@
 // src/index.ts
 import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
-import chalk from "chalk";
 import puppeteer from "puppeteer";
-import { format } from "date-fns";
 import cron from "node-cron";
 
-import { BotActions } from "./actions/BotActions";
-import { DB_NAME, MONGO_URI } from "./config";
 import { MessageController } from "./controllers/MessageController";
-import { BotBirthday } from "./actions/BotBirthday";
 import { MongoService } from "./services/MongoService";
 import { logger } from "./utils/logger";
+import { CommonService } from "./services/CommonService";
+import { AdminService } from "./services/AdminService";
+import { BirthdayService } from "./services/BirthdayService";
 
 /**
  * Initializes and starts the bot
  */
 async function startBot(): Promise<void> {
-  // 1. Instantiate the WhatsApp client
   const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -27,39 +24,28 @@ async function startBot(): Promise<void> {
     },
   });
 
-  // 2. Configure t services
-  const guestCollection = "guests";
-  const msgCollection = "messages";
-  const groupsCollection = "groups";
-  const groupDailySummary = "groupsDailySummary";
-  const mongoService = new MongoService(
-    MONGO_URI,
-    DB_NAME,
-    guestCollection,
-    msgCollection,
-    groupsCollection,
-    groupDailySummary
-  );
+  const mongoService = new MongoService();
   await mongoService.connect();
 
-  // 3. Create BotActions and MessageController
-  const actions = new BotActions(mongoService, client);
-  const birthday = new BotBirthday(mongoService, client);
+  const commonService = new CommonService(mongoService, client);
+  const amdinService = new AdminService(mongoService, client);
+  const birthdayService = new BirthdayService(mongoService, client);
 
-  const controller = new MessageController(actions, birthday);
+  const controller = new MessageController(
+    commonService,
+    amdinService,
+    birthdayService
+  );
 
-  // 4. Display QR code for login
   client.on("qr", (qr: string) => {
     qrcode.generate(qr, { small: true });
     logger.info("📸 Scan the QR code above to authenticate");
   });
 
-  // 5. Bot is ready
   client.on("ready", () => {
     logger.info("✔️  Yasbot is ready!");
   });
 
-  // 6. Route incoming messages to the controller
   client.on("message", async (message: Message) => {
     try {
       await controller.handle(message);
@@ -68,10 +54,9 @@ async function startBot(): Promise<void> {
     }
   });
 
-  // 7. Initialize the connection
   await client.initialize();
 
-  // 8) Schedule daily summary at 07:00 (America/Sao_Paulo)
+  // Schedule daily summary at 07:00 (America/Sao_Paulo)
   cron.schedule(
     "0 7 * * *",
     async () => {
@@ -80,10 +65,9 @@ async function startBot(): Promise<void> {
       );
 
       try {
-        // fetch all registered group IDs
         const groupIds = await mongoService.getGroups();
         for (const groupId of groupIds) {
-          await actions.sendChatSummary(groupId);
+          await commonService.sendChatSummary(groupId);
         }
       } catch (err) {
         logger.warn("❌ Error in daily summary job:", err);
@@ -94,7 +78,7 @@ async function startBot(): Promise<void> {
     }
   );
 
-  // 9) Schedule cleanup at 00:00 (America/Sao_Paulo)
+  // Schedule cleanup at 00:00 (America/Sao_Paulo)
   cron.schedule(
     "0 0 * * *",
     async () => {

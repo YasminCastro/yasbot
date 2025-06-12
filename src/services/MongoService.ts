@@ -1,45 +1,15 @@
 // src/services/MongoService.ts
-import chalk from "chalk";
 import { MongoClient, Collection, DeleteResult, Filter } from "mongodb";
 import { logger } from "../utils/logger";
-
-export interface Guest {
-  _id?: string;
-  name: string;
-  number: string;
-  addedAt: Date;
-  receivedInvitation?: boolean;
-  confirmed?: boolean;
-  confirmedAt?: Date;
-  invitedAt?: Date;
-}
-
-export interface LoggedMessage {
-  _id?: string;
-  message: string;
-  sender: string;
-  timestamp: Date;
-  groupId?: string;
-}
-
-export interface Group {
-  _id?: string;
-  groupId: string;
-}
-
-export interface GroupDailySummary {
-  _id?: string;
-  groupId: string;
-  timestamp: Date;
-  totalMessages: number;
-  top3Lines: string[];
-}
+import { Group, GroupDailySummary, Guest, LoggedMessage } from "../interfaces";
+import { DB_NAME, MONGO_URI } from "../config";
 
 /**
  * Service to manage MongoDB connection and guest operations
  */
 export class MongoService {
   private client: MongoClient;
+  private dbName: string;
   private guests!: Collection<Guest>;
   private groups!: Collection<Group>;
   private messages!: Collection<LoggedMessage>;
@@ -48,15 +18,9 @@ export class MongoService {
   /**
    * Initializes the MongoService with the given connection parameters
    */
-  constructor(
-    private uri: string,
-    private dbName: string,
-    private guestCollection: string,
-    private msgCollection: string,
-    private groupsCollection: string,
-    private groupDailySummaryCollection: string
-  ) {
-    this.client = new MongoClient(this.uri);
+  constructor() {
+    this.client = new MongoClient(MONGO_URI);
+    this.dbName = DB_NAME;
   }
 
   /**
@@ -65,10 +29,10 @@ export class MongoService {
   public async connect(): Promise<void> {
     await this.client.connect();
     const db = this.client.db(this.dbName);
-    this.guests = db.collection(this.guestCollection);
-    this.messages = db.collection(this.msgCollection);
-    this.groups = db.collection(this.groupsCollection);
-    this.groupDailySummary = db.collection(this.groupDailySummaryCollection);
+    this.guests = db.collection("guests");
+    this.messages = db.collection("messages");
+    this.groups = db.collection("groups");
+    this.groupDailySummary = db.collection("groupsDailySummary");
 
     // índices
     await this.guests.createIndex(

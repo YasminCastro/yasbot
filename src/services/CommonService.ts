@@ -5,9 +5,9 @@ import { startOfYesterday, endOfYesterday, format } from "date-fns";
 import { LoggedMessage } from "../interfaces";
 
 /**
- * Class responsible for handling all bot actions
+ * Class responsible for handling common actions
  */
-export class BotActions {
+export class CommonService {
   private lastMentionTime: Map<string, number> = new Map();
 
   constructor(private mongo: MongoService, private client: Client) {}
@@ -57,42 +57,6 @@ export class BotActions {
       "- `!ajuda` ou `!help`: exibe esta mensagem de ajuda.\n\n" +
       "🚀 Qualquer dúvida, é só chamar!";
     await message.reply(helpText);
-  }
-
-  /**
-   * Registers the current group for daily summaries.
-   * Only group admins can run this.
-   * Usage: @add-group
-   */
-  public async addGroup(message: Message): Promise<void> {
-    const chat = await message.getChat();
-    if (!chat.isGroup) {
-      await message.reply("❌ Esse comando só pode ser usado em grupos.");
-      return;
-    }
-    const group = chat as GroupChat;
-
-    const groupId = group.id._serialized;
-    const added = await this.mongo.addGroup(groupId);
-    await message.reply(added.message);
-  }
-
-  /**
-   * Remove the current group for daily summaries.
-   * Only group admins can run this.
-   * Usage: @remove-group
-   */
-  public async removeGroup(message: Message): Promise<void> {
-    const chat = await message.getChat();
-    if (!chat.isGroup) {
-      await message.reply("❌ Esse comando só pode ser usado em grupos.");
-      return;
-    }
-    const group = chat as GroupChat;
-
-    const groupId = group.id._serialized;
-    const added = await this.mongo.removeGroup(groupId);
-    await message.reply(added.message);
   }
 
   /**
