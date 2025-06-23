@@ -15,6 +15,8 @@ import { PartyInviteService } from "./services/PartyInviteService";
  * Initializes and starts the bot
  */
 async function startBot(): Promise<void> {
+  let readyTimestamp = 0;
+
   const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
@@ -43,11 +45,16 @@ async function startBot(): Promise<void> {
   });
 
   client.on("ready", () => {
+    readyTimestamp = Math.floor(Date.now() / 1000);
     logger.info("✔️  Yasbot is ready!");
   });
 
   client.on("message", async (message: Message) => {
     try {
+      if (message.timestamp < readyTimestamp) {
+        logger.info("Ignoring message from before bot was ready");
+        return;
+      }
       await controller.handle(message);
     } catch (err) {
       logger.error("Error processing message:", err);
