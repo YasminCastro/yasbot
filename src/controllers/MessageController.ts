@@ -89,46 +89,46 @@ export class MessageController {
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
 
-    if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
-      if (text.includes("@add-guest")) {
-        await this.partyInviteService.addGuest(message, "@add-guest");
-        return true;
-      }
+    if (!ADMIN_NUMBERS.includes(senderNumber)) return false;
 
-      if (text.includes("@remove-guest")) {
-        await this.partyInviteService.removeGuest(message, "@remove-guest");
-        return true;
-      }
+    if (text.includes("@add-guest")) {
+      await this.partyInviteService.addGuest(message, "@add-guest");
+      return true;
+    }
 
-      if (text.includes("@get-guests")) {
-        await this.partyInviteService.getGuests(message);
-        return true;
-      }
+    if (text.includes("@remove-guest")) {
+      await this.partyInviteService.removeGuest(message, "@remove-guest");
+      return true;
+    }
 
-      if (text.includes("@send-invitation")) {
-        await this.partyInviteService.sendInvites(message);
-        return true;
-      }
+    if (text.includes("@get-guests")) {
+      await this.partyInviteService.getGuests(message);
+      return true;
+    }
 
-      if (text.includes("@send-reminder")) {
-        await this.partyInviteService.sendReminder(message);
-        return true;
-      }
+    if (text.includes("@send-invitation")) {
+      await this.partyInviteService.sendInvites(message);
+      return true;
+    }
 
-      if (text.includes("@admin")) {
-        await this.adminService.admin(message);
-        return true;
-      }
+    if (text.includes("@send-reminder")) {
+      await this.partyInviteService.sendReminder(message);
+      return true;
+    }
 
-      if (text.includes("@add-group")) {
-        await this.adminService.addGroup(message);
-        return true;
-      }
+    if (text.includes("@admin")) {
+      await this.adminService.admin(message);
+      return true;
+    }
 
-      if (text.includes("@remove-group")) {
-        await this.adminService.removeGroup(message);
-        return true;
-      }
+    if (text.includes("@add-group")) {
+      await this.adminService.addGroup(message);
+      return true;
+    }
+
+    if (text.includes("@remove-group")) {
+      await this.adminService.removeGroup(message);
+      return true;
     }
 
     return false;
