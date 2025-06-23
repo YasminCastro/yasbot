@@ -3,7 +3,7 @@ import { GroupChat, Message } from "whatsapp-web.js";
 import { ADMIN_NUMBERS } from "../config";
 import { CommonService } from "../services/CommonService";
 import { AdminService } from "../services/AdminService";
-import { BirthdayService } from "../services/BirthdayService";
+import { PartyInviteService } from "../services/PartyInviteService";
 
 /**
  * Controller responsible for handling incoming messages and dispatching the appropriate bot actions
@@ -12,7 +12,7 @@ export class MessageController {
   constructor(
     private commomService: CommonService,
     private adminService: AdminService,
-    private birthdayService: BirthdayService
+    private partyInviteService: PartyInviteService
   ) {}
 
   /**
@@ -23,7 +23,7 @@ export class MessageController {
 
     if (await this.adminServices(message)) return;
     if (await this.commonServices(message)) return;
-    if (await this.birthdayServices(message)) return;
+    if (await this.partyInviteServices(message)) return;
 
     const chat = await message.getChat();
     if (chat.isGroup) {
@@ -54,30 +54,30 @@ export class MessageController {
     return false;
   }
 
-  private async birthdayServices(message: Message): Promise<boolean> {
+  private async partyInviteServices(message: Message): Promise<boolean> {
     const text = message.body.trim().toLowerCase();
     if (text === "!confirmar") {
-      await this.birthdayService.confirmPresence(message);
+      await this.partyInviteService.confirmPresence(message);
       return true;
     }
 
     if (text === "!cancelar") {
-      await this.birthdayService.cancelPresence(message);
+      await this.partyInviteService.cancelPresence(message);
       return true;
     }
 
     if (text === "!aniversário" || text === "!aniversario") {
-      await this.birthdayService.getInformation(message);
+      await this.partyInviteService.getInformation(message);
       return true;
     }
 
     if (text === "!localização") {
-      await this.birthdayService.getLocalization(message);
+      await this.partyInviteService.getLocalization(message);
       return true;
     }
 
     if (text === "!convite") {
-      await this.birthdayService.sendInvite(message);
+      await this.partyInviteService.sendInvite(message);
       return true;
     }
 
@@ -91,27 +91,27 @@ export class MessageController {
 
     if (senderNumber && ADMIN_NUMBERS.includes(senderNumber)) {
       if (text.includes("@add-guest")) {
-        await this.birthdayService.addGuest(message, "@add-guest");
+        await this.partyInviteService.addGuest(message, "@add-guest");
         return true;
       }
 
       if (text.includes("@remove-guest")) {
-        await this.birthdayService.removeGuest(message, "@remove-guest");
+        await this.partyInviteService.removeGuest(message, "@remove-guest");
         return true;
       }
 
       if (text.includes("@get-guests")) {
-        await this.birthdayService.getGuests(message);
+        await this.partyInviteService.getGuests(message);
         return true;
       }
 
       if (text.includes("@send-invitation")) {
-        await this.birthdayService.sendInvites(message);
+        await this.partyInviteService.sendInvites(message);
         return true;
       }
 
       if (text.includes("@send-reminder")) {
-        await this.birthdayService.sendReminder(message);
+        await this.partyInviteService.sendReminder(message);
         return true;
       }
 

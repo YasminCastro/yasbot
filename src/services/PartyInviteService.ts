@@ -1,13 +1,13 @@
 // src/actions/BotActions.ts
 import { Client, Message, MessageMedia, Location } from "whatsapp-web.js";
-import { MongoService } from "../services/MongoService";
+import { MongoService } from "./MongoService";
 import { logger } from "../utils/logger";
 import { Guest } from "../interfaces";
 
 /**
  * Class responsible for handling all bot actions
  */
-export class BirthdayService {
+export class PartyInviteService {
   constructor(private mongo: MongoService, private client: Client) {}
 
   /**

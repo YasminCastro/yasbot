@@ -9,7 +9,7 @@ import { MongoService } from "./services/MongoService";
 import { logger } from "./utils/logger";
 import { CommonService } from "./services/CommonService";
 import { AdminService } from "./services/AdminService";
-import { BirthdayService } from "./services/BirthdayService";
+import { PartyInviteService } from "./services/PartyInviteService";
 
 /**
  * Initializes and starts the bot
@@ -29,12 +29,12 @@ async function startBot(): Promise<void> {
 
   const commonService = new CommonService(mongoService, client);
   const amdinService = new AdminService(mongoService, client);
-  const birthdayService = new BirthdayService(mongoService, client);
+  const partyInviteService = new PartyInviteService(mongoService, client);
 
   const controller = new MessageController(
     commonService,
     amdinService,
-    birthdayService
+    partyInviteService
   );
 
   client.on("qr", (qr: string) => {
