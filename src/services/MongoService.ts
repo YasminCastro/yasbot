@@ -29,7 +29,7 @@ export class MongoService {
   public async connect(): Promise<void> {
     await this.client.connect();
     const db = this.client.db(this.dbName);
-    this.guests = db.collection("guestsTest");
+    this.guests = db.collection("guests");
     this.messages = db.collection("messages");
     this.groups = db.collection("groups");
     this.groupDailySummary = db.collection("groupsDailySummary");
