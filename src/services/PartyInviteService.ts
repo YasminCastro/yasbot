@@ -65,7 +65,7 @@ export class PartyInviteService {
     if (![10, 11].includes(normalizedNumber.length)) {
       await message.reply(
         "❌ Número inválido. Deve conter DDD + 8 ou 9 dígitos.\n" +
-          "Ex.: @add-guest Thays +55 62 99350-0484 Sim"
+          "Ex.: @add-guest Nome +55 62 98765-4321 Sim"
       );
       return;
     }
@@ -161,7 +161,7 @@ export class PartyInviteService {
       );
 
     const lines = sorted.map((g, idx) => {
-      const status = g.confirmed ? "✅ confirmado" : "⏳ aguardando";
+      const status = g.confirmed ? "✅" : "⏳";
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
     });
 
