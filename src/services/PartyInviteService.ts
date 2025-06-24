@@ -11,7 +11,7 @@ export class PartyInviteService {
   constructor(private mongo: MongoService, private client: Client) {}
 
   /**
-   * Add guests to the birthday list
+   * Add guests to the birthday list, with optional sendInvitation flag
    */
   public async addGuest(message: Message, command: string): Promise<void> {
     const text = this.getTextAndRemoveCommand(message, command);
@@ -19,10 +19,10 @@ export class PartyInviteService {
 
     if (parts.length < 2) {
       await message.reply(
-        "❌ Uso: @add-guest <Nome> <Número>\n" +
+        "❌ Uso: @add-guest <Nome> <Número> [Enviar Convite? Sim/Não]\n" +
           "Exemplos válidos:\n" +
           " • @add-guest Maria 11999888777\n" +
-          " • @add-guest João +55 11 98765-4321\n"
+          " • @add-guest João +55 11 98765-4321 Não"
       );
       return;
     }
@@ -31,42 +31,61 @@ export class PartyInviteService {
     if (firstNumIdx <= 0) {
       await message.reply(
         "❌ Não encontrei um número válido no comando.\n" +
-          "Use: @add-guest <Nome> <Número>\n" +
-          "Ex.: @add-guest Thays +55 11 99350-0484"
+          "Use: @add-guest <Nome> <Número> [Enviar Convite? Sim/Não]"
       );
       return;
     }
 
     const person = parts.slice(0, firstNumIdx).join(" ");
-    const numberRaw = parts.slice(firstNumIdx).join(" ");
-    let normalized = numberRaw.replace(/\D+/g, "");
 
-    if (
-      normalized.startsWith("55") &&
-      (normalized.length === 12 || normalized.length === 13)
-    ) {
-      normalized = normalized.slice(2);
+    const numberTokens = parts
+      .slice(firstNumIdx)
+      .filter((p) => /^\+?[\d\-\(\)]+$/.test(p));
+
+    const inviteIdx = firstNumIdx + numberTokens.length;
+
+    let sendInvitation = true;
+    if (inviteIdx < parts.length) {
+      const flag = parts[inviteIdx].toLowerCase();
+      if (flag === "não" || flag === "nao") {
+        sendInvitation = false;
+      }
     }
 
-    if (![10, 11].includes(normalized.length)) {
+    const numberRaw = numberTokens.join(" ");
+    let normalizedNumber = numberRaw.replace(/\D+/g, "");
+
+    if (
+      normalizedNumber.startsWith("55") &&
+      (normalizedNumber.length === 12 || normalizedNumber.length === 13)
+    ) {
+      normalizedNumber = normalizedNumber.slice(2);
+    }
+
+    if (![10, 11].includes(normalizedNumber.length)) {
       await message.reply(
         "❌ Número inválido. Deve conter DDD + 8 ou 9 dígitos.\n" +
-          "Exemplos:\n" +
-          " • 62912345678\n" +
-          " • +55 62 91234-5678\n"
+          "Ex.: @add-guest Thays +55 62 99350-0484 Sim"
       );
       return;
     }
 
-    const wasGuestAdded = await this.mongo.addGuest(person, normalized);
+    const wasGuestAdded = await this.mongo.addGuest(
+      person,
+      normalizedNumber,
+      sendInvitation
+    );
 
     if (wasGuestAdded) {
+      const conviteMsg = sendInvitation
+        ? "✅ Convite será enviado."
+        : "ℹ️ Convite não será enviado.";
       await message.reply(
-        `${person} foi adicionado com sucesso à lista de convidados! 🎉`
+        `${person} foi adicionado com sucesso à lista de convidados! 🎉\n${conviteMsg}`
       );
     } else {
       await message.reply(
-        `Não foi possível adicionar ${person} à lista de convidados. Tente novamente mais tarde.`
+        `❌ Não foi possível adicionar ${person}. Tente novamente mais tarde.`
       );
     }
   }
