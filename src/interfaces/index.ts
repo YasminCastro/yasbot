@@ -4,6 +4,7 @@ export interface Guest {
   number: string;
   addedAt: Date;
   receivedInvitation?: boolean;
+  sendInvitation?: boolean;
   confirmed?: boolean;
   confirmedAt?: Date;
   invitedAt?: Date;

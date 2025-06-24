@@ -91,7 +91,7 @@ export class PartyInviteService {
   }
 
   /**
-   * Remove guests from the birthday list
+   * Remove guests from the birthday list, by número ou nome
    */
   public async removeGuest(message: Message, command: string): Promise<void> {
     const text = this.getTextAndRemoveCommand(message, command).trim();
@@ -99,18 +99,19 @@ export class PartyInviteService {
 
     if (parts.length < 1) {
       await message.reply(
-        "❌ Uso: @remove-guest <Número>\n" +
+        "❌ Uso: @remove-guest <Número OU Nome>\n" +
           "Exemplos válidos:\n" +
           " • @remove-guest 62912345678\n" +
-          " • @remove-guest +55 62 91234-5678"
+          " • @remove-guest +55 62 91234-5678\n" +
+          " • @remove-guest Maria Silva"
       );
       return;
     }
 
-    const numberRaw = parts.join(" ");
+    const input = parts.join(" ");
 
-    let normalized = numberRaw.replace(/\D+/g, "");
-
+    // Tenta interpretar como telefone
+    let normalized = input.replace(/\D+/g, "");
     if (
       normalized.startsWith("55") &&
       (normalized.length === 12 || normalized.length === 13)
@@ -118,23 +119,26 @@ export class PartyInviteService {
       normalized = normalized.slice(2);
     }
 
-    if (![10, 11].includes(normalized.length)) {
-      await message.reply(
-        "❌ Número inválido. Informe DDD + telefone (8 ou 9 dígitos), opcionalmente com +55.\n" +
-          "Ex.: +55 (11) 99350-0484 ou 11999888777"
-      );
-      return;
+    const isPhone = [10, 11].includes(normalized.length);
+
+    let query: any = {};
+
+    if (isPhone) {
+      query.number = normalized;
+    } else {
+      query.name = { $regex: new RegExp(input, "i") };
     }
 
-    const wasGuestRemoved = await this.mongo.removeGuest(normalized);
+    let wasRemoved = await this.mongo.removeGuest(query);
 
-    if (wasGuestRemoved) {
+    const who = isPhone ? normalized : input;
+    if (wasRemoved) {
       await message.reply(
-        `${normalized} foi removido com sucesso da lista de convidados! 🎉`
+        `${who} foi removido com sucesso da lista de convidados! 🎉`
       );
     } else {
       await message.reply(
-        `Não foi possível remover ${normalized} da lista de convidados. Tente novamente mais tarde.`
+        `Não foi possível remover ${who} da lista de convidados. Tente novamente mais tarde.`
       );
     }
   }

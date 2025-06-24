@@ -51,12 +51,17 @@ export class MongoService {
   /**
    * Adds a new guest to the collection
    */
-  public async addGuest(name: string, number: string): Promise<boolean> {
+  public async addGuest(
+    name: string,
+    number: string,
+    sendInvitation: boolean
+  ): Promise<boolean> {
     const response = await this.guests.insertOne({
       name,
       number,
       addedAt: new Date(),
       receivedInvitation: false,
+      sendInvitation,
     });
 
     return response.acknowledged;
@@ -65,9 +70,9 @@ export class MongoService {
   /**
    * Removes a guest from the collection by their phone number.
    */
-  public async removeGuest(number: string): Promise<boolean> {
+  public async removeGuest(query: Guest | any): Promise<boolean> {
     try {
-      const result: DeleteResult = await this.guests.deleteOne({ number });
+      const result: DeleteResult = await this.guests.deleteOne(query);
       if (result.deletedCount && result.deletedCount > 0) {
         return true;
       } else {
