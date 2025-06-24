@@ -134,7 +134,7 @@ export class PartyInviteService {
     const who = isPhone ? normalized : input;
     if (wasRemoved) {
       await message.reply(
-        `${who} foi removido com sucesso da lista de convidados! 🎉`
+        `${who} foi removido com sucesso da lista de convidados!`
       );
     } else {
       await message.reply(
