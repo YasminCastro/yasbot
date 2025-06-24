@@ -55,28 +55,31 @@ export class MessageController {
   }
 
   private async partyInviteServices(message: Message): Promise<boolean> {
+    const chat = await message.getChat();
+    if (chat.isGroup) return false;
+
     const text = message.body.trim().toLowerCase();
-    if (text === "!confirmar") {
+    if (text === "confirmar") {
       await this.partyInviteService.confirmPresence(message);
       return true;
     }
 
-    if (text === "!cancelar") {
+    if (text === "cancelar") {
       await this.partyInviteService.cancelPresence(message);
       return true;
     }
 
-    if (text === "!aniversário" || text === "!aniversario") {
+    if (text === "aniversário" || text === "aniversario") {
       await this.partyInviteService.getInformation(message);
       return true;
     }
 
-    if (text === "!localização") {
+    if (text === "localização" || text === "localizacao") {
       await this.partyInviteService.getLocalization(message);
       return true;
     }
 
-    if (text === "!convite") {
+    if (text === "convite") {
       await this.partyInviteService.sendInvite(message);
       return true;
     }

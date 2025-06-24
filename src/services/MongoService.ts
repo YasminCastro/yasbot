@@ -29,7 +29,7 @@ export class MongoService {
   public async connect(): Promise<void> {
     await this.client.connect();
     const db = this.client.db(this.dbName);
-    this.guests = db.collection("guests");
+    this.guests = db.collection("guestsTest");
     this.messages = db.collection("messages");
     this.groups = db.collection("groups");
     this.groupDailySummary = db.collection("groupsDailySummary");
@@ -70,9 +70,9 @@ export class MongoService {
   /**
    * Removes a guest from the collection by their phone number.
    */
-  public async removeGuest(query: Guest | any): Promise<boolean> {
+  public async removeGuest(filter: Filter<Guest> = {}): Promise<boolean> {
     try {
-      const result: DeleteResult = await this.guests.deleteOne(query);
+      const result: DeleteResult = await this.guests.deleteOne(filter);
       if (result.deletedCount && result.deletedCount > 0) {
         return true;
       } else {

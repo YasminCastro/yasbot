@@ -178,8 +178,10 @@ export class PartyInviteService {
    * send birthday invitations to guests who haven't received them yet
    */
   public async sendInvites(message: Message): Promise<void> {
-    return;
-    const guests = await this.mongo.getGuests({ receivedInvitation: false });
+    const guests = await this.mongo.getGuests({
+      receivedInvitation: false,
+      sendInvitation: true,
+    });
 
     if (guests.length === 0) {
       await message.reply("📋 Todos os convidados já receberam o convite.");
@@ -227,10 +229,12 @@ export class PartyInviteService {
         "🔔 Olá " +
         guest.name +
         "! \n" +
-        "Você ainda não confirmou sua presença na minha festa de *25 anos* e colação de grau, " +
-        "que acontece em *19/07 às 19h* na minha casa. \n\n" +
-        "• Responda com `!confirmar` para confirmar que você vai. \n" +
-        "• Responda com `!convite` para receber o convite novamente. \n\n" +
+        "Você ainda não confirmou sua presença na festa da Yas, " +
+        "que acontecerá dia *19/07 às 19h* na Rua Jacarandá - Goiânia 2. \n\n" +
+        "• Responda com `confirmar` para confirmar que você vai. \n" +
+        `• Responda com \`cancelar\` se não puder comparecer  \n` +
+        "• Responda com `convite` para receber o convite novamente. \n" +
+        "• Responda com `localização` para receber a loc da festa. \n\n" +
         "Aguardo sua resposta! 🎉";
 
       try {
@@ -320,10 +324,10 @@ export class PartyInviteService {
       "🤔 *Informações úteis*: \n" +
       "\n" +
       "• Se tiver qualquer dificuldade, chame a Yasmin no WhatsApp: *62 98169-5581* \n" +
-      "• Para receber a localização da festa, envie: `!localização` \n" +
-      `• Para confirmar presença, envie: \`!confirmar\` \n` +
-      `• Para cancelar presença, envie: \`!cancelar\` \n` +
-      `• Para ver o convite novamente, envie: \`!convite\` \n` +
+      "• Para receber a localização da festa, envie: `localização` \n" +
+      `• Para confirmar presença, envie: \`confirmar\` \n` +
+      `• Para cancelar presença, envie: \`cancelar\` \n` +
+      `• Para ver o convite novamente, envie: \`convite\` \n` +
       "\n" +
       "🚀 Qualquer outra dúvida, é só chamar!";
 
@@ -374,7 +378,7 @@ export class PartyInviteService {
    * Returns the birthday image as a MessageMedia object
    */
   private birthdayImage() {
-    return MessageMedia.fromFilePath("./assets/yasbot.png");
+    return MessageMedia.fromFilePath("./assets/convite-aniversario-yas.png");
   }
 
   /**
@@ -386,19 +390,27 @@ export class PartyInviteService {
     partyLocation: Location
   ) {
     const chatId = `55${guest.number}@c.us`;
-    const text =
+
+    const introductionText =
+      "🤖 Olá! Eu sou a YasBot, o assistente virtual que a Yasmin criou para te enviar esse convite. \n" +
+      "Qualquer dúvida, é só chamar a Yasmin diretamente: 📱 *62 8169-5581*";
+
+    const inviteText =
       `🎉 Olá ${guest.name}!  \n` +
-      `Você está convidado(a) para a minha festa de *25 anos* e comemoração da *colação de grau* 🎓. \n ` +
+      `Você está convidado(a) para a festa de *25 anos* e comemoração da *colação de grau* da Yas. \n ` +
       `🗓 *19/07 às 19:00* \n` +
-      `📍 *Minha Casa* \n` +
-      `Traga apenas o que for beber e sua caixa térmica.  \n` +
-      `📝 *Confirmações:* \n` +
-      `• Responda com \`!confirmar\` para confirmar presença  \n` +
-      `• Responda com \`!cancelar\` se não puder comparecer  \n` +
-      `• Responda com \`!aniversário\` para mais informações  \n` +
+      `📍 Rua Jacarandá QD 16, LT 25 - Goiânia 2 \n` +
+      `Traga o que for beber e sua caixa térmica.`;
+
+    const informationText =
+      `• Responda com \`confirmar\` para confirmar presença  \n` +
+      `• Responda com \`cancelar\` se não puder comparecer  \n` +
+      `• Responda com \`aniversário\` para mais informações  \n` +
       `Você pode confirmar até *16/07* a qualquer momento.`;
     try {
-      await this.client.sendMessage(chatId, media, { caption: text });
+      await this.client.sendMessage(chatId, introductionText);
+      await this.client.sendMessage(chatId, media, { caption: inviteText });
+      await this.client.sendMessage(chatId, informationText);
       await this.client.sendMessage(chatId, partyLocation);
     } catch (err) {
       logger.error(`❌ Failed to send to ${guest.number}:`, err);
