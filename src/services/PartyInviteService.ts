@@ -161,16 +161,16 @@ export class PartyInviteService {
       );
 
     const lines = sorted.map((g, idx) => {
-      let status = g.confirmed ? "✅" : "⏳";
+      let status = "❌";
 
-      if (!g.receivedInvitation) {
+      if (!g.sendInvitation) {
+        status = "Enviar convite manualmente";
+      } else if (!g.receivedInvitation) {
         status = "📩";
       } else if (g.confirmed == null) {
         status = "⏳";
       } else if (g.confirmed === true) {
         status = "✅";
-      } else {
-        status = "❌";
       }
 
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
