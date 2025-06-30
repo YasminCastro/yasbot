@@ -163,7 +163,9 @@ export class PartyInviteService {
     const lines = sorted.map((g, idx) => {
       let status = "❌";
 
-      if (!g.sendInvitation) {
+      if (!g.sendInvitation && g.confirmed === true) {
+        status = "✅";
+      } else if (!g.sendInvitation) {
         status = "Enviar convite manualmente";
       } else if (!g.receivedInvitation) {
         status = "📩";
