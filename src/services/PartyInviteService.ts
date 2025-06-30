@@ -166,7 +166,7 @@ export class PartyInviteService {
       if (!g.sendInvitation && g.confirmed === true) {
         status = "✅";
       } else if (!g.sendInvitation) {
-        status = "Enviar convite manualmente";
+        status = "🗣️";
       } else if (!g.receivedInvitation) {
         status = "📩";
       } else if (g.confirmed == null) {
