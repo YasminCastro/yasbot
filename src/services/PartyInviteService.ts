@@ -161,7 +161,18 @@ export class PartyInviteService {
       );
 
     const lines = sorted.map((g, idx) => {
-      const status = g.confirmed ? "✅" : "⏳";
+      let status = g.confirmed ? "✅" : "⏳";
+
+      if (!g.receivedInvitation) {
+        status += "📩";
+      } else if (g.confirmed == null) {
+        status += "⏳";
+      } else if (g.confirmed === true) {
+        status = "✅";
+      } else {
+        status += "❌";
+      }
+
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
     });
 
