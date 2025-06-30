@@ -164,13 +164,13 @@ export class PartyInviteService {
       let status = g.confirmed ? "✅" : "⏳";
 
       if (!g.receivedInvitation) {
-        status += "📩";
+        status = "📩";
       } else if (g.confirmed == null) {
-        status += "⏳";
+        status = "⏳";
       } else if (g.confirmed === true) {
         status = "✅";
       } else {
-        status += "❌";
+        status = "❌";
       }
 
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
