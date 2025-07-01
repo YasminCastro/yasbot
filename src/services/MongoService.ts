@@ -1,7 +1,13 @@
 // src/services/MongoService.ts
 import { MongoClient, Collection, DeleteResult, Filter } from "mongodb";
 import { logger } from "../utils/logger";
-import { Group, GroupDailySummary, Guest, LoggedMessage } from "../interfaces";
+import {
+  Group,
+  GroupDailySummary,
+  Guest,
+  LoggedMessage,
+  Settings,
+} from "../interfaces";
 import { DB_NAME, MONGO_URI } from "../config";
 
 /**
@@ -14,6 +20,7 @@ export class MongoService {
   private groups!: Collection<Group>;
   private messages!: Collection<LoggedMessage>;
   private groupDailySummary!: Collection<GroupDailySummary>;
+  private settings!: Collection<Settings>;
 
   /**
    * Initializes the MongoService with the given connection parameters
@@ -33,6 +40,7 @@ export class MongoService {
     this.messages = db.collection("messages");
     this.groups = db.collection("groups");
     this.groupDailySummary = db.collection("groupsDailySummary");
+    this.settings = db.collection("settings");
 
     // índices
     await this.guests.createIndex(
@@ -268,6 +276,23 @@ export class MongoService {
       throw err;
     }
   }
+
+  // #endregion
+
+  // #region Settings
+
+  async getSetting(filter: Filter<Settings> = {}): Promise<Settings | null> {
+    const doc = await this.settings.findOne(filter);
+    return doc;
+  }
+
+  // async setSetting<T = any>(key: string, value: T): Promise<void> {
+  //   await this.settings.updateOne(
+  //     { key },
+  //     { $set: { value } },
+  //     { upsert: true }
+  //   );
+  // }
 
   // #endregion
 }

@@ -45,3 +45,8 @@ export interface Vakinha {
     date: Date;
   }>;
 }
+
+export interface Settings {
+  _id?: string;
+  lastRechargeReminder?: Date;
+}
