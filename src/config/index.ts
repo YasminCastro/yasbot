@@ -22,7 +22,3 @@ export const DB_NAME = requireEnv("DB_NAME");
 
 const adminNumbers = requireEnv("ADMIN_NUMBERS");
 export const ADMIN_NUMBERS = adminNumbers.split(",");
-
-// Variáveis opcionais com defaults
-export const SHEET_NAME = process.env.SHEET_NAME ?? "Página1";
-export const DATE_LOCALE = process.env.DATE_LOCALE ?? "pt-BR";
