@@ -10,6 +10,7 @@ import { logger } from "./utils/logger";
 import { CommonService } from "./services/CommonService";
 import { AdminService } from "./services/AdminService";
 import { PartyInviteService } from "./services/PartyInviteService";
+import { format } from "date-fns";
 
 /**
  * Initializes and starts the bot
@@ -51,10 +52,15 @@ async function startBot(): Promise<void> {
 
   client.on("message", async (message: Message) => {
     try {
-      if (message.timestamp < readyTimestamp) {
+      const chat = await message.getChat();
+
+      if (chat.isGroup && message.timestamp < readyTimestamp) {
         logger.info("Ignoring message from before bot was ready");
         return;
       }
+
+      logger.silly(`📥 New message from ${message.from}`);
+
       await controller.handle(message);
     } catch (err) {
       logger.error("Error processing message:", err);
