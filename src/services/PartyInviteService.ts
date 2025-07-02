@@ -3,6 +3,7 @@ import { Client, Message, MessageMedia, Location } from "whatsapp-web.js";
 import { MongoService } from "./MongoService";
 import { logger } from "../utils/logger";
 import { Guest } from "../interfaces";
+import { ADMIN_NUMBERS } from "../config";
 
 /**
  * Class responsible for handling all bot actions
@@ -304,6 +305,8 @@ export class PartyInviteService {
 
     await this.mongo.changeGuestConfirmStatus(senderNumber, true);
     await message.reply("✅ Sua presença foi confirmada com sucesso!");
+
+    await this.notifyAdmin(guest, true);
   }
 
   /**
@@ -320,13 +323,10 @@ export class PartyInviteService {
       return;
     }
 
-    if (!guest.confirmed) {
-      await message.reply("❌ Sua presença já foi cancelada.");
-      return;
-    }
-
     await this.mongo.changeGuestConfirmStatus(senderNumber, false);
     await message.reply("❌ Sua presença foi cancelada!");
+
+    await this.notifyAdmin(guest, false);
   }
 
   /**
@@ -429,5 +429,21 @@ export class PartyInviteService {
       logger.error(`❌ Failed to send to ${guest.number}:`, err);
     }
     return;
+  }
+
+  private async notifyAdmin(guest: Guest, confirmed: boolean) {
+    const text = confirmed
+      ? `✅ O convidado ${guest.name} confirmou presença na festa.`
+      : `❗️ O convidado ${guest.name} cancelou a presença na festa.`;
+
+    for (let admin of ADMIN_NUMBERS) {
+      const chatId = `${admin}@c.us`;
+
+      try {
+        await this.client.sendMessage(chatId, text);
+      } catch (err) {
+        logger.error(`❌ Falha ao notificar admin ${admin}:`, err);
+      }
+    }
   }
 }
