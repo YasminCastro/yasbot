@@ -161,29 +161,31 @@ export class PartyInviteService {
         a.name.localeCompare(b.name, "pt", { sensitivity: "base" })
       );
 
+    let totalConfirmed = 0;
+    let totalCanceled = 0;
+    let totalWaitingResponse = 0;
+
     const lines = sorted.map((g, idx) => {
       let status = "❌";
 
       if (!g.sendInvitation && g.confirmed === true) {
         status = "✅";
+        totalConfirmed += 1;
       } else if (!g.sendInvitation) {
         status = "🗣️";
       } else if (!g.receivedInvitation) {
         status = "📩";
       } else if (g.confirmed == null) {
         status = "⏳";
+        totalWaitingResponse += 1;
       } else if (g.confirmed === true) {
         status = "✅";
+      } else {
+        totalCanceled += 1;
       }
 
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
     });
-
-    const totalConfirmed = sorted.filter((g) => g.confirmed).length;
-    const totalCanceled = sorted.filter((g) => !g.confirmed).length;
-    const totalWaitingResponse = sorted.filter(
-      (g) => g.receivedInvitation && g.confirmed === null
-    ).length;
 
     const reply = [
       `📋 *Lista atual de convidados* \n Total de convidados: ${sorted.length} \n Total de confirmados: ${totalConfirmed} \n Total de cancelados: ${totalCanceled} \n Total de aguarando resposta: ${totalWaitingResponse} \n`,
