@@ -180,9 +180,13 @@ export class PartyInviteService {
     });
 
     const totalConfirmed = sorted.filter((g) => g.confirmed).length;
+    const totalCanceled = sorted.filter((g) => !g.confirmed).length;
+    const totalWaitingResponse = sorted.filter(
+      (g) => g.receivedInvitation && g.confirmed === null
+    ).length;
 
     const reply = [
-      `📋 *Lista atual de convidados* \n Total de convidados: ${sorted.length} \n Total de confirmados: ${totalConfirmed}`,
+      `📋 *Lista atual de convidados* \n Total de convidados: ${sorted.length} \n Total de confirmados: ${totalConfirmed} \n Total de cancelados: ${totalCanceled} \n Total de aguarando resposta: ${totalWaitingResponse} \n`,
       ...lines,
     ].join("\n");
     await message.reply(reply);
