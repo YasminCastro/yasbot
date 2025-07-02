@@ -161,37 +161,48 @@ export class PartyInviteService {
         a.name.localeCompare(b.name, "pt", { sensitivity: "base" })
       );
 
-    let totalConfirmed = 0;
-    let totalCanceled = 0;
-    let totalWaitingResponse = 0;
+    let totalManual = 0; // 🗣️
+    let totalPendingInvite = 0; // 📩
+    let totalWaitingResponse = 0; // ⏳
+    let totalConfirmed = 0; // ✅
+    let totalCanceled = 0; // ❌
 
     const lines = sorted.map((g, idx) => {
-      let status = "❌";
+      let status: string;
 
-      if (!g.sendInvitation && g.confirmed === true) {
-        status = "✅";
-        totalConfirmed += 1;
-      } else if (!g.sendInvitation) {
+      if (!g.sendInvitation) {
+        // convite manual
         status = "🗣️";
+        totalManual++;
       } else if (!g.receivedInvitation) {
+        // convite não foi recebido ainda
         status = "📩";
-      } else if (g.confirmed == null) {
-        status = "⏳";
-        totalWaitingResponse += 1;
+        totalPendingInvite++;
       } else if (g.confirmed === true) {
         status = "✅";
+        totalConfirmed++;
+      } else if (g.confirmed === false) {
+        status = "❌";
+        totalCanceled++;
       } else {
-        totalCanceled += 1;
+        // g.confirmed == null
+        status = "⏳";
+        totalWaitingResponse++;
       }
 
       return `${idx + 1} - ${g.name} (${g.number}) – ${status}`;
     });
 
-    const reply = [
-      `📋 *Lista atual de convidados* \n Total de convidados: ${sorted.length} \n Total de confirmados: ${totalConfirmed} \n Total de cancelados: ${totalCanceled} \n Total de aguarando resposta: ${totalWaitingResponse} \n`,
-      ...lines,
+    const header = [
+      "📋 *Lista atual de convidados*",
+      `Total de convidados: ${sorted.length}`,
+      `🗣️ Convite manual: ${totalManual}`,
+      `📩 Convite pendente de recebimento: ${totalPendingInvite}`,
+      `⏳ Aguardando resposta: ${totalWaitingResponse}`,
+      `✅ Confirmados: ${totalConfirmed}`,
+      `❌ Cancelados: ${totalCanceled}`,
     ].join("\n");
-    await message.reply(reply);
+    await message.reply([header, ...lines].join("\n"));
   }
 
   /**
