@@ -161,8 +161,6 @@ export class PartyInviteService {
         a.name.localeCompare(b.name, "pt", { sensitivity: "base" })
       );
 
-    let totalManual = 0; // 🗣️
-    let totalPendingInvite = 0; // 📩
     let totalWaitingResponse = 0; // ⏳
     let totalConfirmed = 0; // ✅
     let totalCanceled = 0; // ❌
@@ -171,13 +169,9 @@ export class PartyInviteService {
       let status: string;
 
       if (!g.sendInvitation) {
-        // convite manual
         status = "🗣️";
-        totalManual++;
       } else if (!g.receivedInvitation) {
-        // convite não foi recebido ainda
         status = "📩";
-        totalPendingInvite++;
       } else if (g.confirmed === true) {
         status = "✅";
         totalConfirmed++;
@@ -185,7 +179,6 @@ export class PartyInviteService {
         status = "❌";
         totalCanceled++;
       } else {
-        // g.confirmed == null
         status = "⏳";
         totalWaitingResponse++;
       }
@@ -196,11 +189,9 @@ export class PartyInviteService {
     const header = [
       "📋 *Lista atual de convidados*",
       `Total de convidados: ${sorted.length}`,
-      `🗣️ Convite manual: ${totalManual}`,
-      `📩 Convite pendente de recebimento: ${totalPendingInvite}`,
       `⏳ Aguardando resposta: ${totalWaitingResponse}`,
       `✅ Confirmados: ${totalConfirmed}`,
-      `❌ Cancelados: ${totalCanceled}`,
+      `❌ Cancelados: ${totalCanceled} \n`,
     ].join("\n");
     await message.reply([header, ...lines].join("\n"));
   }
