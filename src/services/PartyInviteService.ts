@@ -431,23 +431,6 @@ export class PartyInviteService {
   }
 
   /**
-   * Sends admin commands and information
-   */
-  public async admin(message: Message): Promise<void> {
-    const informationText =
-      "🤔 *Comandos*: \n" +
-      "\n" +
-      "• @add-guest <nome> <numero> \n" +
-      "• @remove-guest <numero> \n" +
-      "• @update-guest <nome> - vai? não - recebeu convite? sim - é para enviar convite? sim \n" +
-      `• @get-guests \n` +
-      `• @send-invitation \n`;
-
-    await message.reply(informationText);
-    return;
-  }
-
-  /**
    * Gets the text of the message and removes the command prefix
    */
   private getTextAndRemoveCommand(message: Message, command: string) {

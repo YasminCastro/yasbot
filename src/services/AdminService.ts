@@ -53,10 +53,9 @@ export class AdminService {
       "\n" +
       "• @add-guest <nome> <numero> \n" +
       "• @remove-guest <numero> \n" +
+      "• @update-guest <nome> - vai? não - recebeu convite? sim - é para enviar convite? sim \n" +
       `• @get-guests \n` +
-      `• @send-invitation \n` +
-      `• @send-confirmation-reminder \n` +
-      `• @send-reminder`;
+      `• @send-invitation \n`;
 
     await message.reply(informationText);
     return;
