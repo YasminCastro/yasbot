@@ -104,6 +104,11 @@ export class MessageController {
       return true;
     }
 
+    if (text.includes("@update-guest")) {
+      await this.partyInviteService.updateGuest(message, "@update-guest");
+      return true;
+    }
+
     if (text.includes("@get-guests")) {
       await this.partyInviteService.getGuests(message);
       return true;

@@ -1,5 +1,11 @@
 // src/services/MongoService.ts
-import { MongoClient, Collection, DeleteResult, Filter } from "mongodb";
+import {
+  MongoClient,
+  Collection,
+  DeleteResult,
+  Filter,
+  UpdateResult,
+} from "mongodb";
 import { logger } from "../utils/logger";
 import { Group, GroupDailySummary, Guest, LoggedMessage } from "../interfaces";
 import { DB_NAME, MONGO_URI } from "../config";
@@ -80,6 +86,24 @@ export class MongoService {
       }
     } catch (err) {
       logger.error("❌ Error removing guest:", err);
+      throw err;
+    }
+  }
+
+  /**
+   * Update a guest from the collection by their name.
+   */
+  public async updateGuest(
+    filter: Filter<Guest> = {},
+    updateFields: Partial<Guest>
+  ): Promise<boolean> {
+    try {
+      const result: UpdateResult = await this.guests.updateOne(filter, {
+        $set: updateFields,
+      });
+      return result.acknowledged && result.matchedCount > 0;
+    } catch (err) {
+      logger.error("❌ Error updating guest:", err);
       throw err;
     }
   }

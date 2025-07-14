@@ -145,6 +145,72 @@ export class PartyInviteService {
   }
 
   /**
+   * Update a guest by name, parsing multiple “key? value” segments.
+   * Usage in chat:
+   *   @update-guest Maria - é para enviar convite? sim - recebeu convite? sim - vai? sim
+   */
+  public async updateGuest(message: Message, command: string): Promise<void> {
+    const raw = message.body.slice(command.length).trim();
+    const segments = raw
+      .split("-")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const name = segments.shift();
+    if (!name) {
+      await message.reply(
+        "❌ Uso: @update-guest <Nome> - <campo? valor> [- <campo? valor>...]\n" +
+          "Exemplo:\n" +
+          "  @update-guest Maria Silva - vai? sim - recebeu convite? não"
+      );
+      return;
+    }
+
+    const filter = { name: { $regex: new RegExp(`^${name}$`, "i") } };
+    const updateFields: Partial<Guest> = {};
+
+    for (const seg of segments) {
+      const [question, answerRaw] = seg.split("?").map((p) => p.trim());
+      if (!answerRaw) continue;
+      const ans = answerRaw.toLowerCase();
+      const yes = ans.startsWith("s") || ans === "yes" || ans === "true";
+
+      if (question.includes("enviar convite")) {
+        updateFields.sendInvitation = yes;
+      } else if (question.includes("recebeu convite")) {
+        updateFields.receivedInvitation = yes;
+      } else if (question.includes("vai")) {
+        updateFields.confirmed = yes;
+        if (yes) updateFields.confirmedAt = new Date();
+      } else {
+        logger.warn(`Unknown update field: "${question}"`);
+      }
+    }
+
+    // 4️⃣ Perform the update
+    if (Object.keys(updateFields).length === 0) {
+      await message.reply(
+        "❌ Não encontrei nenhum campo válido para atualizar."
+      );
+      return;
+    }
+
+    const ok = await this.mongo.updateGuest(filter, updateFields);
+    if (ok) {
+      await message.reply(
+        `✅ ${name} atualizado com sucesso:\n` +
+          Object.entries(updateFields)
+            .map(([k, v]) => `• ${k}: ${v}`)
+            .join("\n")
+      );
+    } else {
+      await message.reply(
+        `❌ Não consegui encontrar ou atualizar ${name}. Verifique o nome e tente novamente.`
+      );
+    }
+  }
+
+  /**
    * Get birthday list
    */
   public async getGuests(message: Message): Promise<void> {
@@ -373,6 +439,7 @@ export class PartyInviteService {
       "\n" +
       "• @add-guest <nome> <numero> \n" +
       "• @remove-guest <numero> \n" +
+      "• @update-guest <nome> \n" +
       `• @get-guests \n` +
       `• @send-invitation \n` +
       `• @send-reminder`;
