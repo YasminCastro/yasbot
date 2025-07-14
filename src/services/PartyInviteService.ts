@@ -159,7 +159,7 @@ export class PartyInviteService {
     const name = segments.shift();
     if (!name) {
       await message.reply(
-        "❌ Uso: @update-guest <Nome> - <campo? valor> [- <campo? valor>...]\n" +
+        "❌ Uso: @update-guest <Nome> - vai? não - recebeu convite? sim - é para enviar convite? sim \n" +
           "Exemplo:\n" +
           "  @update-guest Maria Silva - vai? sim - recebeu convite? não"
       );
@@ -439,10 +439,9 @@ export class PartyInviteService {
       "\n" +
       "• @add-guest <nome> <numero> \n" +
       "• @remove-guest <numero> \n" +
-      "• @update-guest <nome> \n" +
+      "• @update-guest <nome> - vai? não - recebeu convite? sim - é para enviar convite? sim \n" +
       `• @get-guests \n` +
-      `• @send-invitation \n` +
-      `• @send-reminder`;
+      `• @send-invitation \n`;
 
     await message.reply(informationText);
     return;
