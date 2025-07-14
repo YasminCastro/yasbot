@@ -233,7 +233,7 @@ export class PartyInviteService {
   /**
    * sends a reminder to guests who haven't confirm the invitation yet
    */
-  public async sendReminder(message: Message): Promise<void> {
+  public async sendConfirmationReminder(message: Message): Promise<void> {
     const guests = await this.mongo.getGuests({
       confirmed: { $exists: false },
     });

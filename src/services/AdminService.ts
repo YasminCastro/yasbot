@@ -55,6 +55,7 @@ export class AdminService {
       "• @remove-guest <numero> \n" +
       `• @get-guests \n` +
       `• @send-invitation \n` +
+      `• @send-confirmation-reminder \n` +
       `• @send-reminder`;
 
     await message.reply(informationText);
