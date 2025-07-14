@@ -114,11 +114,6 @@ export class MessageController {
       return true;
     }
 
-    if (text.includes("@send-reminder")) {
-      await this.partyInviteService.sendConfirmationReminder(message);
-      return true;
-    }
-
     if (text.includes("@send-confirmation-reminder")) {
       await this.partyInviteService.sendConfirmationReminder(message);
       return true;
