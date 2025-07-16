@@ -10,10 +10,9 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only --quiet src/index.ts",
-    "start:prod": "yarn build && pm2 start dist/index.js --name yasbot --env production",
-    "restart:prod": "yarn build && pm2 stop yasbot && pm2 start dist/index.js --name yasbot --env production",
-    "start:silly": "cross-env LOG_LEVEL=silly yarn start:prod",
-    "restart:silly": "cross-env LOG_LEVEL=silly yarn restart:prod"
+    "start:prod": "yarn build && pm2 start dist/index.js --name yasbot --env production && pm2 logs yasbot",
+    "restart:prod": "yarn build && pm2 stop yasbot && pm2 start dist/index.js --name yasbot --env production && pm2 logs yasbot",
+    "reconnect": "rm -rf ./.wwebjs_auth && rm -rf ./.wwebjs_cache"
   },
   "keywords": [],
   "author": "",
