@@ -23,7 +23,7 @@ export class MessageController {
 
     if (await this.adminServices(message)) return;
     if (await this.commonServices(message)) return;
-    if (await this.partyInviteServices(message)) return;
+    // if (await this.partyInviteServices(message)) return;
 
     const chat = await message.getChat();
     if (chat.isGroup) {
