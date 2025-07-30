@@ -3,6 +3,7 @@ import { Client, LocalAuth, Message } from "whatsapp-web.js";
 import qrcode from "qrcode-terminal";
 import puppeteer from "puppeteer";
 import cron from "node-cron";
+import path from "path";
 
 import { MessageController } from "./controllers/MessageController";
 import { MongoService } from "./services/MongoService";
@@ -10,7 +11,6 @@ import { logger } from "./utils/logger";
 import { CommonService } from "./services/CommonService";
 import { AdminService } from "./services/AdminService";
 import { PartyInviteService } from "./services/PartyInviteService";
-import { format } from "date-fns";
 
 /**
  * Initializes and starts the bot
@@ -23,7 +23,12 @@ async function startBot(): Promise<void> {
     puppeteer: {
       headless: true,
       executablePath: puppeteer.executablePath(),
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage", // comment in local
+        `--user-data-dir=${path.resolve(__dirname, ".wpp-session")}`, // comment in local
+      ],
     },
   });
 
