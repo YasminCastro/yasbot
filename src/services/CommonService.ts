@@ -1,7 +1,7 @@
 // src/actions/BotActions.ts
 import { Message, GroupChat, Client } from "whatsapp-web.js";
 import { MongoService } from "../services/MongoService";
-import { startOfYesterday, endOfYesterday, format } from "date-fns";
+import { startOfYesterday, endOfYesterday, format, getHours } from "date-fns";
 import { LoggedMessage } from "../interfaces";
 
 /**
@@ -57,6 +57,25 @@ export class CommonService {
       "- `!ajuda` ou `!help`: exibe esta mensagem de ajuda.\n\n" +
       "🚀 Qualquer dúvida, é só chamar!";
     await message.reply(helpText);
+  }
+
+  /**
+   * Send a hello message
+   */
+  public async hello(message: Message): Promise<void> {
+    const now = new Date();
+    const hour = getHours(now);
+
+    let text = "Oie, ";
+    if (hour <= 12) {
+      text += "Bom dia";
+    } else if (hour < 18) {
+      text += "Boa tarde";
+    } else {
+      text += "Boa noite";
+    }
+
+    await message.reply(text);
   }
 
   /**

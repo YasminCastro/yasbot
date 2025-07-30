@@ -41,6 +41,7 @@ export class MessageController {
 
   private async commonServices(message: Message): Promise<boolean> {
     const text = message.body.trim().toLowerCase();
+    const chat = await message.getChat();
     if (text === "!all" || text === "!todos") {
       await this.commomService.mentionAll(message);
       return true;
@@ -48,6 +49,11 @@ export class MessageController {
 
     if (text === "!help" || text === "!ajuda") {
       await this.commomService.help(message);
+      return true;
+    }
+
+    if ((text === "Oi" || text === "Olá" || text === "Oie") && !chat.isGroup) {
+      await this.commomService.hello(message);
       return true;
     }
 
