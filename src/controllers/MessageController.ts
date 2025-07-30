@@ -52,6 +52,10 @@ export class MessageController {
       return true;
     }
 
+    console.log(text);
+    console.log(chat.isGroup);
+    console.log(!chat.isGroup);
+
     if ((text === "Oi" || text === "Olá" || text === "Oie") && !chat.isGroup) {
       await this.commomService.hello(message);
       return true;
