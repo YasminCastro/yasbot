@@ -41,7 +41,6 @@ export class MessageController {
 
   private async commonServices(message: Message): Promise<boolean> {
     const text = message.body.trim().toLowerCase();
-    const chat = await message.getChat();
     if (text === "!all" || text === "!todos") {
       await this.commomService.mentionAll(message);
       return true;
@@ -52,12 +51,7 @@ export class MessageController {
       return true;
     }
 
-    console.log(text);
-    console.log(chat.isGroup);
-    console.log(!chat.isGroup);
-
-    if (text === "Oi" || text === "Olá" || text === "Oie") {
-      console.log("Respondendo com saudação");
+    if (text === "oi" || text === "olá" || text === "oie") {
       await this.commomService.hello(message);
       return true;
     }

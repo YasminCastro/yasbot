@@ -75,8 +75,6 @@ export class CommonService {
       text += "Boa noite";
     }
 
-    console.log(text);
-
     await message.reply(text);
   }
 
