@@ -68,11 +68,11 @@ export class CommonService {
 
     let text = "Oie, ";
     if (hour <= 12) {
-      text += "Bom dia";
+      text += "bom dia ⛅";
     } else if (hour < 18) {
-      text += "Boa tarde";
+      text += "boa tarde ☀️";
     } else {
-      text += "Boa noite";
+      text += "boa noite 🌛";
     }
 
     await message.reply(text);
