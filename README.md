@@ -1,4 +1,4 @@
-# yasbot
+# Yasbot
 
 Este projeto é um bot desenvolvido para automação de tarefas. Siga as instruções abaixo para rodar o projeto localmente.
 
