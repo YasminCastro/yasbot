@@ -78,15 +78,6 @@ export class CommonService {
     const senderNumber = authorId.split("@")[0];
     const chatId = message.from;
 
-    const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
-
-    if (isAnOldPerson) {
-      const slang =
-        this.oldSlangs[Math.floor(Math.random() * this.oldSlangs.length)];
-      await message.reply(`Oi, ${slang}`);
-      return;
-    }
-
     const key = `${chatId}:${senderNumber}`;
     const now = Date.now();
     const oneHour = 60 * 60 * 1000;
