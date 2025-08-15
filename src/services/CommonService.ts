@@ -72,7 +72,9 @@ export class CommonService {
     console.log("senderNumber", senderNumber);
     console.log("OLD_PEOPLE_NUMBERS", OLD_PEOPLE_NUMBERS);
 
-    if (senderNumber in OLD_PEOPLE_NUMBERS) {
+    const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
+
+    if (isAnOldPerson) {
       await message.reply("Oi, Cacura");
       return;
     }
