@@ -69,8 +69,8 @@ export class CommonService {
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
 
-    console.log(senderNumber);
-    console.log(OLD_PEOPLE_NUMBERS);
+    console.log("senderNumber", senderNumber);
+    console.log("OLD_PEOPLE_NUMBERS", OLD_PEOPLE_NUMBERS);
 
     if (senderNumber in OLD_PEOPLE_NUMBERS) {
       await message.reply("Oi, Cacura");
