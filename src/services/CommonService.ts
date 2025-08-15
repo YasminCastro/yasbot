@@ -10,6 +10,8 @@ import { OLD_PEOPLE_NUMBERS } from "../config";
  */
 export class CommonService {
   private lastMentionTime: Map<string, number> = new Map();
+  private helloSpamMap: Map<string, { count: number; lastTime: number }> =
+    new Map();
 
   private oldSlangs = [
     "Cacura",
@@ -74,7 +76,43 @@ export class CommonService {
   public async hello(message: Message): Promise<void> {
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
+    const chatId = message.from;
 
+    const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
+
+    if (isAnOldPerson) {
+      const slang =
+        this.oldSlangs[Math.floor(Math.random() * this.oldSlangs.length)];
+      await message.reply(`Oi, ${slang}`);
+      return;
+    }
+
+    const key = `${chatId}:${senderNumber}`;
+    const now = Date.now();
+    const oneHour = 60 * 60 * 1000;
+
+    let entry = this.helloSpamMap.get(key);
+
+    if (!entry || now - entry.lastTime > oneHour) {
+      entry = { count: 0, lastTime: now };
+    }
+
+    entry.count++;
+    entry.lastTime = now;
+    this.helloSpamMap.set(key, entry);
+
+    if (entry.count === 1) {
+      await this.replyHello(message, senderNumber);
+    } else if (entry.count === 2) {
+      await message.reply("Oie, eu já te dei oi 😑.");
+    } else if (entry.count === 3) {
+      await message.reply("Oie, não vou te falar mais oi 😡.");
+    } else {
+      return;
+    }
+  }
+
+  private async replyHello(message: Message, senderNumber: string) {
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
 
     if (isAnOldPerson) {
