@@ -102,7 +102,7 @@ export class CommonService {
     this.helloSpamMap.set(key, entry);
 
     if (entry.count === 1) {
-      await this.replyHello(message, senderNumber);
+      await this.replyHello(message);
     } else if (entry.count === 2) {
       await message.reply("Oie, eu já te dei oi 😑.");
     } else if (entry.count === 3) {
@@ -112,7 +112,7 @@ export class CommonService {
     }
   }
 
-  private async replyHello(message: Message, senderNumber: string) {
+  private async replyHello(message: Message) {
     const now = new Date();
     const hour = getHours(now);
 
