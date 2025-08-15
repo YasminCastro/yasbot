@@ -14,8 +14,8 @@ export class CommonService {
   private oldSlangs = [
     "Cacura",
     "Velha",
-    "Geriatrica",
-    "Jurrasica",
+    "Geriátrica",
+    "Jurrássica",
     "Inimiga do INSS",
   ];
 
