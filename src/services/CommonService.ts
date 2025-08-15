@@ -14,11 +14,11 @@ export class CommonService {
     new Map();
 
   private oldSlangs = [
-    "Cacura",
-    "Velha",
-    "Geriátrica",
-    "Jurrássica",
-    "Inimiga do INSS",
+    "Cacura 👵",
+    "Velha 👵",
+    "Geriátrica 👵",
+    "Jurrássica 💀",
+    "Inimiga do INSS 👵",
   ];
 
   constructor(private mongo: MongoService, private client: Client) {}
