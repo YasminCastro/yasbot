@@ -10,6 +10,15 @@ import { LoggedMessage } from "../interfaces";
 export class CommonService {
   private lastMentionTime: Map<string, number> = new Map();
 
+  private oldNumbers = new Set(
+    (process.env.OLD_NUMBERS || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+
+  private oldSlangs = [];
+
   constructor(private mongo: MongoService, private client: Client) {}
 
   /**
@@ -63,6 +72,14 @@ export class CommonService {
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
+    const authorId = message.author ?? message.from;
+    const senderNumber = authorId.split("@")[0];
+
+    if (senderNumber in this.oldNumbers) {
+      await message.reply("Oi, Cacura");
+      return;
+    }
+
     const now = new Date();
     const hour = getHours(now);
 
