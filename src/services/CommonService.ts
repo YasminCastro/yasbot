@@ -11,7 +11,13 @@ import { OLD_PEOPLE_NUMBERS } from "../config";
 export class CommonService {
   private lastMentionTime: Map<string, number> = new Map();
 
-  private oldSlangs = [];
+  private oldSlangs = [
+    "Cacura",
+    "Velha",
+    "Geriatrica",
+    "Jurrasica",
+    "Inimiga do INSS",
+  ];
 
   constructor(private mongo: MongoService, private client: Client) {}
 
@@ -69,13 +75,12 @@ export class CommonService {
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
 
-    console.log("senderNumber", senderNumber);
-    console.log("OLD_PEOPLE_NUMBERS", OLD_PEOPLE_NUMBERS);
-
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
 
     if (isAnOldPerson) {
-      await message.reply("Oi, Cacura");
+      const slang =
+        this.oldSlangs[Math.floor(Math.random() * this.oldSlangs.length)];
+      await message.reply(`Oi, ${slang}`);
       return;
     }
 
