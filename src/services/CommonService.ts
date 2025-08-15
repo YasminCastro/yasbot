@@ -3,19 +3,13 @@ import { Message, GroupChat, Client } from "whatsapp-web.js";
 import { MongoService } from "../services/MongoService";
 import { startOfYesterday, endOfYesterday, format, getHours } from "date-fns";
 import { LoggedMessage } from "../interfaces";
+import { OLD_PEOPLE_NUMBERS } from "../config";
 
 /**
  * Class responsible for handling common actions
  */
 export class CommonService {
   private lastMentionTime: Map<string, number> = new Map();
-
-  private oldNumbers = new Set(
-    (process.env.OLD_NUMBERS || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean)
-  );
 
   private oldSlangs = [];
 
@@ -76,9 +70,9 @@ export class CommonService {
     const senderNumber = authorId.split("@")[0];
 
     console.log(senderNumber);
-    console.log(this.oldNumbers);
+    console.log(OLD_PEOPLE_NUMBERS);
 
-    if (senderNumber in this.oldNumbers) {
+    if (senderNumber in OLD_PEOPLE_NUMBERS) {
       await message.reply("Oi, Cacura");
       return;
     }

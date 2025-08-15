@@ -22,3 +22,6 @@ export const DB_NAME = requireEnv("DB_NAME");
 
 const adminNumbers = requireEnv("ADMIN_NUMBERS");
 export const ADMIN_NUMBERS = adminNumbers.split(",");
+
+const oldPeopleNumbers = requireEnv("OLD_PEOPLE_NUMBERS");
+export const OLD_PEOPLE_NUMBERS = oldPeopleNumbers.split(",");
