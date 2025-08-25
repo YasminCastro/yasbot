@@ -25,3 +25,9 @@ export const ADMIN_NUMBERS = adminNumbers.split(",");
 
 const oldPeopleNumbers = requireEnv("OLD_PEOPLE_NUMBERS");
 export const OLD_PEOPLE_NUMBERS = oldPeopleNumbers.split(",");
+
+const nodeEnv = requireEnv("NODE_ENV");
+export const NODE_ENV = nodeEnv ? nodeEnv : "production";
+
+const adminGroup = requireEnv("ADMIN_GROUP");
+export const ADMIN_GROUP = adminGroup.split(",");

@@ -11,6 +11,8 @@ import { logger } from "./utils/logger";
 import { CommonService } from "./services/CommonService";
 import { AdminService } from "./services/AdminService";
 import { PartyInviteService } from "./services/PartyInviteService";
+import { NODE_ENV } from "./config";
+import { shouldProcessInDev } from "./utils/startHelpers";
 
 /**
  * Initializes and starts the bot
@@ -64,8 +66,17 @@ async function startBot(): Promise<void> {
         return;
       }
 
-      logger.silly(`📥 New message from ${message.from}`);
+      if (NODE_ENV === "development") {
+        const ok = shouldProcessInDev(message, chat);
+        if (!ok) {
+          logger.silly(
+            `⛔ [DEV] Ignorando mensagem de ${message.from} no chat ${chat.id._serialized}`
+          );
+          return;
+        }
+      }
 
+      logger.silly(`📥 New message from ${message.from}`);
       await controller.handle(message);
     } catch (err) {
       logger.error("Error processing message:", err);
