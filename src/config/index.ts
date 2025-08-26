@@ -23,11 +23,13 @@ export const DB_NAME = requireEnv("DB_NAME");
 const adminNumbers = requireEnv("ADMIN_NUMBERS");
 export const ADMIN_NUMBERS = adminNumbers.split(",");
 
-const oldPeopleNumbers = requireEnv("OLD_PEOPLE_NUMBERS");
-export const OLD_PEOPLE_NUMBERS = oldPeopleNumbers.split(",");
+const oldPeopleNumbers = process.env["OLD_PEOPLE_NUMBERS"];
+export const OLD_PEOPLE_NUMBERS = oldPeopleNumbers
+  ? oldPeopleNumbers.split(",")
+  : [];
 
-const nodeEnv = requireEnv("NODE_ENV");
+const nodeEnv = process.env["NODE_ENV"];
 export const NODE_ENV = nodeEnv ? nodeEnv : "production";
 
-const adminGroup = requireEnv("ADMIN_GROUP");
-export const ADMIN_GROUP = adminGroup.split(",");
+const adminGroup = process.env["ADMIN_GROUP"];
+export const ADMIN_GROUP = adminGroup ? adminGroup.split(",") : [];
