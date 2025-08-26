@@ -11,7 +11,7 @@ import { logger } from "./utils/logger";
 import { CommonService } from "./services/CommonService";
 import { AdminService } from "./services/AdminService";
 import { PartyInviteService } from "./services/PartyInviteService";
-import { NODE_ENV } from "./config";
+import { ADMIN_NUMBERS, NODE_ENV } from "./config";
 import { shouldProcessInDev } from "./utils/startHelpers";
 
 /**
@@ -117,6 +117,25 @@ async function startBot(): Promise<void> {
         await mongoService.deleteMessagesOlderThan(twoDaysAgo);
       } catch (err) {
         logger.warn("❌ Error in cleanup job:", err);
+      }
+    },
+    {
+      timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
+    }
+  );
+
+  cron.schedule(
+    "0 8-22 * * *",
+    async () => {
+      logger.info("📡 Enviando ping (ping) para admins...");
+
+      try {
+        for (const adminId of ADMIN_NUMBERS) {
+          const chatId = `${adminId}@c.us`;
+          await client.sendMessage(chatId, "ping");
+        }
+      } catch (err) {
+        logger.warn("❌ Erro no job de ping para admins:", err);
       }
     },
     {
