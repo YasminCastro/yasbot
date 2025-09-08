@@ -44,7 +44,8 @@ async function startBot(): Promise<void> {
   const controller = new MessageController(
     commonService,
     amdinService,
-    partyInviteService
+    partyInviteService,
+    mongoService
   );
 
   client.on("qr", (qr: string) => {
@@ -85,6 +86,21 @@ async function startBot(): Promise<void> {
 
   await client.initialize();
 
+  if (NODE_ENV !== "development") {
+    startCronJobs(mongoService, commonService, client);
+  }
+}
+
+startBot().catch((err) => {
+  logger.error("Error starting Yasbot:", err);
+  process.exit(1);
+});
+
+function startCronJobs(
+  mongoService: MongoService,
+  commonService: CommonService,
+  client: Client
+) {
   // Schedule daily summary at 07:00 (America/Sao_Paulo)
   cron.schedule(
     "0 7 * * *",
@@ -143,8 +159,3 @@ async function startBot(): Promise<void> {
     }
   );
 }
-
-startBot().catch((err) => {
-  logger.error("Error starting Yasbot:", err);
-  process.exit(1);
-});

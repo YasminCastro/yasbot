@@ -21,6 +21,8 @@ export class CommonService {
     "inimiga do INSS 👵",
   ];
 
+  private genteResponses = ["Oh lá o capeta atentando...", "Lá vem..."];
+
   constructor(private mongo: MongoService, private client: Client) {}
 
   /**
@@ -68,6 +70,17 @@ export class CommonService {
       "- `!ajuda` ou `!help`: exibe esta mensagem de ajuda.\n\n" +
       "🚀 Qualquer dúvida, é só chamar!";
     await message.reply(helpText);
+  }
+
+  /**
+   * Reply the "gente" message
+   */
+  public async gente(message: Message): Promise<void> {
+    const response =
+      this.genteResponses[
+        Math.floor(Math.random() * this.genteResponses.length)
+      ];
+    await message.reply(response);
   }
 
   /**

@@ -4,6 +4,7 @@ import { ADMIN_NUMBERS } from "../config";
 import { CommonService } from "../services/CommonService";
 import { AdminService } from "../services/AdminService";
 import { PartyInviteService } from "../services/PartyInviteService";
+import { MongoService } from "../services/MongoService";
 
 /**
  * Controller responsible for handling incoming messages and dispatching the appropriate bot actions
@@ -12,7 +13,8 @@ export class MessageController {
   constructor(
     private commomService: CommonService,
     private adminService: AdminService,
-    private partyInviteService: PartyInviteService
+    private partyInviteService: PartyInviteService,
+    private mongoService: MongoService
   ) {}
 
   /**
@@ -22,19 +24,22 @@ export class MessageController {
     if (message.fromMe) return;
 
     const chat = await message.getChat();
-    if (chat.isGroup) {
-      const group = chat as GroupChat;
-      const groupId = group.id._serialized;
+    const group = chat as GroupChat;
+    const groupId = group.id._serialized;
 
+    if (chat.isGroup) {
       await this.commomService.addMessage(message, groupId);
     }
 
     if (await this.adminServices(message)) return;
-    if (await this.commonServices(message)) return;
+    if (await this.commonServices(message, groupId)) return;
     // if (await this.partyInviteServices(message)) return;
   }
 
-  private async commonServices(message: Message): Promise<boolean> {
+  private async commonServices(
+    message: Message,
+    groupId: string
+  ): Promise<boolean> {
     const chat = await message.getChat();
     if (!chat.isGroup) return false;
 
@@ -53,6 +58,18 @@ export class MessageController {
     //   await this.commomService.help(message);
     //   return true;
     // }
+
+    const groupIds = await this.mongoService.getGroups();
+
+    console.log(groupIds);
+    console.log(groupId);
+
+    if (!groupIds.includes(groupId)) return false;
+
+    if (text === "gente" || text === "gebte") {
+      await this.commomService.gente(message);
+      return true;
+    }
 
     return false;
   }
