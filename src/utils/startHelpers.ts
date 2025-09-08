@@ -12,6 +12,6 @@ export function shouldProcessInDev(message: Message, chat: any): boolean {
   if (chat.isGroup) {
     return ADMIN_GROUP.includes(chat.id._serialized);
   } else {
-    return ADMIN_NUMBERS.includes(message.from);
+    return ADMIN_NUMBERS.includes(`${message.from}@c.us`);
   }
 }

@@ -1,9 +1,16 @@
 // src/actions/BotActions.ts
-import { Message, GroupChat, Client } from "whatsapp-web.js";
+import { Message, GroupChat, Client, MessageMedia } from "whatsapp-web.js";
 import { MongoService } from "../services/MongoService";
-import { startOfYesterday, endOfYesterday, format, getHours } from "date-fns";
+import {
+  startOfYesterday,
+  endOfYesterday,
+  format,
+  getHours,
+  getDay,
+} from "date-fns";
 import { LoggedMessage } from "../interfaces";
-import { OLD_PEOPLE_NUMBERS } from "../config";
+import { FERNANDO_NUMBER, GLAUCIA_NUMBER, OLD_PEOPLE_NUMBERS } from "../config";
+import fs from "fs";
 
 /**
  * Class responsible for handling common actions
@@ -76,11 +83,46 @@ export class CommonService {
    * Reply the "gente" message
    */
   public async gente(message: Message): Promise<void> {
+    const authorId = message.author ?? message.from;
+    const senderNumber = authorId.split("@")[0];
+
+    const now = new Date();
+    const day = getDay(now);
+    const hour = getHours(now);
+
+    const isWeekend = day === 0 || day === 6;
+    const isWedToFriAfternoon = day >= 3 && day <= 5 && hour >= 15;
+    const isThuToSatEarly = day >= 4 && day <= 6 && hour <= 3;
+
+    // Only send message if is the weekend or wednesday to friday between 15h and 03h
+    if (!(isWeekend || isWedToFriAfternoon || isThuToSatEarly)) {
+      return;
+    }
+
+    if (senderNumber === GLAUCIA_NUMBER) {
+      const stickerPath = "./stickers/glaucia-fica-em-casa.webp";
+      const sticker = MessageMedia.fromFilePath(stickerPath);
+      await message.reply(sticker, undefined, { sendMediaAsSticker: true });
+
+      return;
+    }
+
+    if (senderNumber === FERNANDO_NUMBER) {
+      const stickerPath = "./stickers/fernando-fica-em-casa.webp";
+      const sticker = MessageMedia.fromFilePath(stickerPath);
+      await message.reply(sticker, undefined, { sendMediaAsSticker: true });
+
+      return;
+    }
+
     const response =
       this.genteResponses[
         Math.floor(Math.random() * this.genteResponses.length)
       ];
+
     await message.reply(response);
+
+    return;
   }
 
   /**

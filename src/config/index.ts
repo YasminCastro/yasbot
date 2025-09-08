@@ -33,3 +33,9 @@ export const NODE_ENV = nodeEnv ? nodeEnv : "production";
 
 const adminGroup = process.env["ADMIN_GROUP"];
 export const ADMIN_GROUP = adminGroup ? adminGroup.split(",") : [];
+
+const glauciaNumber = process.env["GLAUCIA_NUMBER"];
+export const GLAUCIA_NUMBER = glauciaNumber;
+
+const fernandoNumber = process.env["FERNANDO_NUMBER"];
+export const FERNANDO_NUMBER = fernandoNumber;

@@ -61,10 +61,7 @@ export class MessageController {
 
     const groupIds = await this.mongoService.getGroups();
 
-    console.log(groupIds);
-    console.log(groupId);
-
-    if (!groupIds.includes(groupId)) return false;
+    // if (!groupIds.includes(groupId)) return false;
 
     if (text === "gente" || text === "gebte") {
       await this.commomService.gente(message);
