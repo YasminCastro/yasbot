@@ -28,7 +28,11 @@ export class CommonService {
     "inimiga do INSS 👵",
   ];
 
-  private genteResponses = ["Oh lá o capeta atentando...", "Lá vem..."];
+  private genteResponses = [
+    "Oh lá o capeta atentando...",
+    "Lá vem...",
+    "Vixe, lá vem...",
+  ];
 
   constructor(private mongo: MongoService, private client: Client) {}
 
