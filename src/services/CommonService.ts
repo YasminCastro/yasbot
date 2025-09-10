@@ -10,7 +10,6 @@ import {
 } from "date-fns";
 import { LoggedMessage } from "../interfaces";
 import { FERNANDO_NUMBER, GLAUCIA_NUMBER, OLD_PEOPLE_NUMBERS } from "../config";
-import fs from "fs";
 
 /**
  * Class responsible for handling common actions
@@ -19,6 +18,8 @@ export class CommonService {
   private lastMentionTime: Map<string, number> = new Map();
   private helloSpamMap: Map<string, { count: number; lastTime: number }> =
     new Map();
+
+  private genteSpamMap: Map<string, { lastTime: number }> = new Map();
 
   private oldSlangs = [
     "cacura 👵",
@@ -89,6 +90,7 @@ export class CommonService {
   public async gente(message: Message): Promise<void> {
     const authorId = message.author ?? message.from;
     const senderNumber = authorId.split("@")[0];
+    const chatId = message.from;
 
     const now = new Date();
     const day = getDay(now);
@@ -103,11 +105,22 @@ export class CommonService {
       return;
     }
 
+    const key = `${chatId}:${senderNumber}`;
+    const dateNow = Date.now();
+    const oneHour = 60 * 60 * 1000;
+
+    let entry = this.genteSpamMap.get(key);
+
+    if (entry && dateNow - entry.lastTime < oneHour) {
+      return;
+    }
+
+    this.genteSpamMap.set(key, { lastTime: dateNow });
+
     if (senderNumber === GLAUCIA_NUMBER) {
       const stickerPath = "./stickers/glaucia-fica-em-casa.webp";
       const sticker = MessageMedia.fromFilePath(stickerPath);
       await message.reply(sticker, undefined, { sendMediaAsSticker: true });
-
       return;
     }
 
@@ -115,7 +128,6 @@ export class CommonService {
       const stickerPath = "./stickers/fernando-fica-em-casa.webp";
       const sticker = MessageMedia.fromFilePath(stickerPath);
       await message.reply(sticker, undefined, { sendMediaAsSticker: true });
-
       return;
     }
 
