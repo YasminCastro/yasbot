@@ -183,22 +183,6 @@ export class CommonService {
     }
   }
 
-  private async replyHello(message: Message) {
-    const now = new Date();
-    const hour = getHours(now);
-
-    let text = "Oie, ";
-    if (hour <= 12) {
-      text += "bom dia ⛅";
-    } else if (hour < 18) {
-      text += "boa tarde ☀️";
-    } else {
-      text += "boa noite 🌛";
-    }
-
-    await message.reply(text);
-  }
-
   /**
    * Registers the current message for daily summaries.
    */
@@ -261,6 +245,8 @@ export class CommonService {
     );
   }
 
+  // region Helpers
+
   private async getTopSenders(messagesToday: LoggedMessage[]) {
     const counts: Record<string, number> = {};
     for (const msg of messagesToday) {
@@ -288,4 +274,22 @@ export class CommonService {
 
     return { top3Lines, mentionJids };
   }
+
+  private async replyHello(message: Message) {
+    const now = new Date();
+    const hour = getHours(now);
+
+    let text = "Oie, ";
+    if (hour <= 12) {
+      text += "bom dia ⛅";
+    } else if (hour < 18) {
+      text += "boa tarde ☀️";
+    } else {
+      text += "boa noite 🌛";
+    }
+
+    await message.reply(text);
+  }
+
+  // #endregion
 }

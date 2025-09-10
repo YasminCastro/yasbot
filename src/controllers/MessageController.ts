@@ -59,6 +59,11 @@ export class MessageController {
     //   return true;
     // }
 
+    if (text === "!figurinha") {
+      await this.commomService.hello(message);
+      return true;
+    }
+
     const groupIds = await this.mongoService.getGroups();
 
     if (!groupIds.includes(groupId)) return false;
