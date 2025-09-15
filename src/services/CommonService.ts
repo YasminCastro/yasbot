@@ -21,6 +21,9 @@ export class CommonService {
     new Map();
 
   private genteSpamMap: Map<string, { lastTime: number }> = new Map();
+
+  private rainSpamMap: Map<string, number> = new Map();
+
   private weatherCache?: {
     at: number;
     data: {
@@ -262,6 +265,21 @@ export class CommonService {
    *  Sends if is going to rain today
    */
   public async handleRainQuestion(message: Message): Promise<void> {
+    const authorId = message.author ?? message.from;
+    const senderNumber = authorId.split("@")[0];
+    const chatId = message.from;
+    const key = `${chatId}:${senderNumber}`;
+
+    const { allowed } = this.checkAndStamp(
+      this.rainSpamMap,
+      key,
+      60 * 60 * 1000
+    );
+
+    if (!allowed) {
+      return;
+    }
+
     const lat = -16.67623877369769;
     const lon = -49.258858721888245;
 
@@ -459,6 +477,22 @@ export class CommonService {
     if (p >= 36) return `Acho que sim, tem ${p}% de chover hoje em Goiânia`;
     if (p >= 11) return `Acho que não, tem ${p}% de chover hoje em Goiânia`;
     return `Não, tem ${p}% de chover hoje em Goiânia`;
+  }
+
+  private checkAndStamp(
+    map: Map<string, number>,
+    key: string,
+    windowMs: number
+  ): { allowed: boolean; waitMs: number } {
+    const now = Date.now();
+    const last = map.get(key) ?? 0;
+    const diff = now - last;
+
+    if (diff < windowMs) {
+      return { allowed: false, waitMs: windowMs - diff };
+    }
+    map.set(key, now);
+    return { allowed: true, waitMs: 0 };
   }
 
   // #endregion
