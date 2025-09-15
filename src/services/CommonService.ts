@@ -97,7 +97,7 @@ export class CommonService {
     const hour = getHours(now);
 
     const isWeekend = day === 0 || day === 6;
-    const isWedToFriAfternoon = day >= 3 && day <= 5 && hour >= 15;
+    const isWedToFriAfternoon = day >= 3 && day <= 5 && hour >= 16;
     const isThuToSatEarly = day >= 4 && day <= 6 && hour <= 3;
 
     // Only send message if is the weekend or wednesday to friday between 15h and 03h
@@ -278,17 +278,77 @@ export class CommonService {
   private async replyHello(message: Message) {
     const now = new Date();
     const hour = getHours(now);
+    const temp = await this.getCurrentTempC(-16.67, -49.25);
+    let tempEmoji = "☀️";
+    if (temp) {
+      const condition = this.weatherCodeToEmoji(temp.code, temp.isDay);
+      tempEmoji = condition;
+    }
 
     let text = "Oie, ";
     if (hour <= 12) {
-      text += "bom dia ⛅";
+      text += `bom dia ${tempEmoji}`;
     } else if (hour < 18) {
-      text += "boa tarde ☀️";
+      text += `boa tarde ${tempEmoji}`;
     } else {
-      text += "boa noite 🌛";
+      text += `boa noite ${tempEmoji}`;
     }
 
     await message.reply(text);
+  }
+
+  private async getCurrentTempC(
+    lat: number,
+    lon: number
+  ): Promise<{ temp: number; code: any; isDay: boolean } | null> {
+    try {
+      const url =
+        `https://api.open-meteo.com/v1/forecast` +
+        `?latitude=${lat}&longitude=${lon}` +
+        `&current=temperature_2m,weather_code,is_day` +
+        `&timezone=America%2FSao_Paulo`;
+
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+
+      if (data?.current?.temperature_2m != null) {
+        const temp = Math.round(data.current.temperature_2m);
+        const code = data.current.weather_code;
+        const isDay = data.current.is_day === 1;
+        return { temp, code, isDay };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private weatherCodeToEmoji(code: number, isDay: boolean): string {
+    const sun = "☀️";
+    const moon = "🌙";
+    const cloudDay = "⛅";
+    const cloudNight = "☁️🌙";
+    const cloud = "☁️";
+    const fog = "🌫️";
+    const rain = "🌧️";
+    const showerDay = "🌦️";
+    const showerNight = "🌧️🌙";
+    const thunder = "⛈️";
+    const snow = "❄️";
+
+    if (code === 0) return isDay ? sun : moon; // Céu limpo
+    if (code === 1) return isDay ? cloudDay : cloudNight; // Predomínio de sol / noite clara
+    if (code === 2) return isDay ? cloudDay : cloudNight; // Parcialmente nublado
+    if (code === 3) return cloud; // Nublado
+    if (code === 45 || code === 48) return fog; // Neblina / névoa
+    if (code >= 51 && code <= 67) return isDay ? showerDay : showerNight; // Garoa / chuva leve
+    if (code >= 61 && code <= 65) return rain; // Chuva
+    if (code >= 71 && code <= 77) return snow; // Neve
+    if (code >= 80 && code <= 82) return isDay ? showerDay : showerNight; // Pancadas
+    if (code >= 95 && code <= 99) return thunder; // Trovoadas
+
+    return isDay ? sun : moon; // fallback
   }
 
   // #endregion
