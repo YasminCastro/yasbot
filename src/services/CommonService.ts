@@ -10,6 +10,7 @@ import {
 } from "date-fns";
 import { LoggedMessage } from "../interfaces";
 import { FERNANDO_NUMBER, GLAUCIA_NUMBER, OLD_PEOPLE_NUMBERS } from "../config";
+import { logger } from "../utils/logger";
 
 /**
  * Class responsible for handling common actions
@@ -20,6 +21,16 @@ export class CommonService {
     new Map();
 
   private genteSpamMap: Map<string, { lastTime: number }> = new Map();
+  private weatherCache?: {
+    at: number;
+    data: { temp: number; code: number; isDay: boolean };
+  };
+  private WEATHER_TTL_MS = 30 * 60 * 1000;
+  private weatherInFlight?: Promise<{
+    temp: number;
+    code: number;
+    isDay: boolean;
+  } | null>;
 
   private oldSlangs = [
     "cacura 👵",
@@ -278,10 +289,13 @@ export class CommonService {
   private async replyHello(message: Message) {
     const now = new Date();
     const hour = getHours(now);
-    const temp = await this.getCurrentTempC(-16.67, -49.25);
+
+    const lat = -16.67;
+    const lon = -49.25;
+    const weather = await this.getCurrentWeatherCached(lat, lon);
     let tempEmoji = "☀️";
-    if (temp) {
-      const condition = this.weatherCodeToEmoji(temp.code, temp.isDay);
+    if (weather) {
+      const condition = this.weatherCodeToEmoji(weather.code, weather.isDay);
       tempEmoji = condition;
     }
 
@@ -297,10 +311,10 @@ export class CommonService {
     await message.reply(text);
   }
 
-  private async getCurrentTempC(
+  private async fetchCurrentWeather(
     lat: number,
     lon: number
-  ): Promise<{ temp: number; code: any; isDay: boolean } | null> {
+  ): Promise<{ temp: number; code: number; isDay: boolean } | null> {
     try {
       const url =
         `https://api.open-meteo.com/v1/forecast` +
@@ -316,11 +330,53 @@ export class CommonService {
         const temp = Math.round(data.current.temperature_2m);
         const code = data.current.weather_code;
         const isDay = data.current.is_day === 1;
+        logger.info(
+          `Current weather fetched, temp: ${temp}, code ${code}, isDay: ${isDay}`
+        );
+
         return { temp, code, isDay };
       }
       return null;
     } catch {
       return null;
+    }
+  }
+
+  private async getCurrentWeatherCached(
+    lat: number,
+    lon: number
+  ): Promise<{ temp: number; code: number; isDay: boolean } | null> {
+    const now = Date.now();
+
+    if (this.weatherCache && now - this.weatherCache.at < this.WEATHER_TTL_MS) {
+      return this.weatherCache.data;
+    }
+
+    if (this.weatherInFlight) {
+      try {
+        const data = await this.weatherInFlight;
+        return data ?? this.weatherCache?.data ?? null;
+      } catch {
+        return this.weatherCache?.data ?? null;
+      }
+    }
+
+    this.weatherInFlight = this.fetchCurrentWeather(lat, lon)
+      .then((data) => {
+        if (data) {
+          this.weatherCache = { at: Date.now(), data };
+        }
+        return data;
+      })
+      .finally(() => {
+        this.weatherInFlight = undefined;
+      });
+
+    try {
+      const fresh = await this.weatherInFlight;
+      return fresh ?? this.weatherCache?.data ?? null;
+    } catch {
+      return this.weatherCache?.data ?? null;
     }
   }
 
@@ -337,16 +393,19 @@ export class CommonService {
     const thunder = "⛈️";
     const snow = "❄️";
 
-    if (code === 0) return isDay ? sun : moon; // Céu limpo
-    if (code === 1) return isDay ? cloudDay : cloudNight; // Predomínio de sol / noite clara
-    if (code === 2) return isDay ? cloudDay : cloudNight; // Parcialmente nublado
-    if (code === 3) return cloud; // Nublado
-    if (code === 45 || code === 48) return fog; // Neblina / névoa
-    if (code >= 51 && code <= 67) return isDay ? showerDay : showerNight; // Garoa / chuva leve
-    if (code >= 61 && code <= 65) return rain; // Chuva
-    if (code >= 71 && code <= 77) return snow; // Neve
-    if (code >= 80 && code <= 82) return isDay ? showerDay : showerNight; // Pancadas
-    if (code >= 95 && code <= 99) return thunder; // Trovoadas
+    if (code === 0) return isDay ? sun : moon; // limpo
+    if (code === 1 || code === 2) return isDay ? cloudDay : cloudNight; // poucas nuvens / parcialmente nublado
+    if (code === 3) return cloud; // nublado
+    if (code === 45 || code === 48) return fog; // neblina
+
+    // ordem importa: primeiro os específicos
+    if (code >= 61 && code <= 65) return rain; // chuva (contínua)
+    if ((code >= 51 && code <= 57) || (code >= 66 && code <= 67)) {
+      return isDay ? showerDay : showerNight; // garoa / chuva congelante leve
+    }
+    if (code >= 71 && code <= 77) return snow; // neve
+    if (code >= 80 && code <= 82) return isDay ? showerDay : showerNight; // pancadas
+    if (code >= 95 && code <= 99) return thunder; // trovoadas
 
     return isDay ? sun : moon; // fallback
   }
