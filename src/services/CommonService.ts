@@ -23,13 +23,15 @@ export class CommonService {
   private genteSpamMap: Map<string, { lastTime: number }> = new Map();
   private weatherCache?: {
     at: number;
-    data: { temp: number; code: number; isDay: boolean };
+    data: {
+      current: { temp: number; code: number; isDay: boolean };
+      rain: { prob: number };
+    };
   };
   private WEATHER_TTL_MS = 30 * 60 * 1000;
   private weatherInFlight?: Promise<{
-    temp: number;
-    code: number;
-    isDay: boolean;
+    current: { temp: number; code: number; isDay: boolean };
+    rain: { prob: number };
   } | null>;
 
   private oldSlangs = [
@@ -256,6 +258,23 @@ export class CommonService {
     );
   }
 
+  /**
+   *  Sends if is going to rain today
+   */
+  public async handleRainQuestion(message: Message): Promise<void> {
+    const lat = -16.67623877369769;
+    const lon = -49.258858721888245;
+
+    const wx = await this.getWeatherBundleCached(lat, lon);
+    if (!wx) {
+      await message.reply("Não consegui ver a previsão agora 😕");
+      return;
+    }
+
+    const reply = this.formatRainAnswer(wx.rain.prob);
+    await message.reply(reply);
+  }
+
   // region Helpers
 
   private async getTopSenders(messagesToday: LoggedMessage[]) {
@@ -292,10 +311,13 @@ export class CommonService {
 
     const lat = -16.67;
     const lon = -49.25;
-    const weather = await this.getCurrentWeatherCached(lat, lon);
+    const weather = await this.getWeatherBundleCached(lat, lon);
     let tempEmoji = "☀️";
     if (weather) {
-      const condition = this.weatherCodeToEmoji(weather.code, weather.isDay);
+      const condition = this.weatherCodeToEmoji(
+        weather.current.code,
+        weather.current.isDay
+      );
       tempEmoji = condition;
     }
 
@@ -311,47 +333,69 @@ export class CommonService {
     await message.reply(text);
   }
 
-  private async fetchCurrentWeather(
+  private async fetchWeatherBundle(
     lat: number,
     lon: number
-  ): Promise<{ temp: number; code: number; isDay: boolean } | null> {
+  ): Promise<{
+    current: { temp: number; code: number; isDay: boolean };
+    rain: { prob: number };
+  } | null> {
     try {
       const url =
         `https://api.open-meteo.com/v1/forecast` +
         `?latitude=${lat}&longitude=${lon}` +
-        `&current=temperature_2m,weather_code,is_day` +
+        `&current=temperature_2m,weather_code,is_day` + // atual
+        `&daily=precipitation_probability_max` + // chuva hoje
+        `&forecast_days=1` +
         `&timezone=America%2FSao_Paulo`;
 
       const res = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
 
-      if (data?.current?.temperature_2m != null) {
-        const temp = Math.round(data.current.temperature_2m);
-        const code = data.current.weather_code;
-        const isDay = data.current.is_day === 1;
-        logger.info(
-          `Current weather fetched, temp: ${temp}, code ${code}, isDay: ${isDay}`
-        );
+      // current
+      const t = data?.current?.temperature_2m;
+      const c = data?.current?.weather_code;
+      const d = data?.current?.is_day;
 
-        return { temp, code, isDay };
-      }
-      return null;
+      if (t == null || c == null || d == null) return null;
+
+      // rain today
+      const arr = data?.daily?.precipitation_probability_max;
+      const prob =
+        Array.isArray(arr) && arr[0] != null
+          ? Math.round(Number(arr[0]))
+          : null;
+      if (prob == null) return null;
+
+      return {
+        current: {
+          temp: Math.round(Number(t)),
+          code: Number(c),
+          isDay: d === 1,
+        },
+        rain: { prob: Math.max(0, Math.min(100, prob)) },
+      };
     } catch {
       return null;
     }
   }
 
-  private async getCurrentWeatherCached(
+  private async getWeatherBundleCached(
     lat: number,
     lon: number
-  ): Promise<{ temp: number; code: number; isDay: boolean } | null> {
+  ): Promise<{
+    current: { temp: number; code: number; isDay: boolean };
+    rain: { prob: number };
+  } | null> {
     const now = Date.now();
 
+    // cache válido
     if (this.weatherCache && now - this.weatherCache.at < this.WEATHER_TTL_MS) {
       return this.weatherCache.data;
     }
 
+    // já tem chamada em andamento?
     if (this.weatherInFlight) {
       try {
         const data = await this.weatherInFlight;
@@ -361,11 +405,10 @@ export class CommonService {
       }
     }
 
-    this.weatherInFlight = this.fetchCurrentWeather(lat, lon)
+    // dispara nova chamada
+    this.weatherInFlight = this.fetchWeatherBundle(lat, lon)
       .then((data) => {
-        if (data) {
-          this.weatherCache = { at: Date.now(), data };
-        }
+        if (data) this.weatherCache = { at: Date.now(), data };
         return data;
       })
       .finally(() => {
@@ -408,6 +451,14 @@ export class CommonService {
     if (code >= 95 && code <= 99) return thunder; // trovoadas
 
     return isDay ? sun : moon; // fallback
+  }
+
+  private formatRainAnswer(prob: number): string {
+    const p = Math.max(0, Math.min(100, Math.round(prob)));
+    if (p >= 61) return `Sim, tem ${p}% de chover hoje em Goiânia`;
+    if (p >= 36) return `Acho que sim, tem ${p}% de chover hoje em Goiânia`;
+    if (p >= 11) return `Acho que não, tem ${p}% de chover hoje em Goiânia`;
+    return `Não, tem ${p}% de chover hoje em Goiânia`;
   }
 
   // #endregion

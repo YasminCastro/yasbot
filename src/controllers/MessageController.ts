@@ -44,6 +44,7 @@ export class MessageController {
     if (!chat.isGroup) return false;
 
     const text = message.body.trim().toLowerCase();
+
     if (text === "!all" || text === "!todos") {
       await this.commomService.mentionAll(message);
       return true;
@@ -51,6 +52,11 @@ export class MessageController {
 
     if (text === "oi" || text === "olá" || text === "oie") {
       await this.commomService.hello(message);
+      return true;
+    }
+
+    if (text.includes("vai chover")) {
+      await this.commomService.handleRainQuestion(message);
       return true;
     }
 
