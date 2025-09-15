@@ -113,6 +113,7 @@ function startCronJobs(
         const groupIds = await mongoService.getGroups();
         for (const groupId of groupIds) {
           await commonService.sendChatSummary(groupId);
+          await commonService.sendTodaysWeather(groupId);
         }
       } catch (err) {
         logger.warn("❌ Error in daily summary job:", err);

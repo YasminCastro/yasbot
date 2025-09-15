@@ -10,7 +10,6 @@ import {
 } from "date-fns";
 import { LoggedMessage } from "../interfaces";
 import { FERNANDO_NUMBER, GLAUCIA_NUMBER, OLD_PEOPLE_NUMBERS } from "../config";
-import { logger } from "../utils/logger";
 
 /**
  * Class responsible for handling common actions
@@ -28,14 +27,27 @@ export class CommonService {
     at: number;
     data: {
       current: { temp: number; code: number; isDay: boolean };
-      rain: { prob: number };
+      daily: {
+        probRain: number;
+        tMax: number;
+        tMin: number;
+        rhMin?: number | null;
+      };
     };
   };
   private WEATHER_TTL_MS = 30 * 60 * 1000;
   private weatherInFlight?: Promise<{
     current: { temp: number; code: number; isDay: boolean };
-    rain: { prob: number };
+    daily: {
+      probRain: number;
+      tMax: number;
+      tMin: number;
+      rhMin?: number | null;
+    };
   } | null>;
+
+  private LAT = -16.67;
+  private LONG = -49.25;
 
   private oldSlangs = [
     "cacura 👵",
@@ -262,6 +274,34 @@ export class CommonService {
   }
 
   /**
+   *  Sends a message about the weather
+   */
+  public async sendTodaysWeather(groupId: string): Promise<void> {
+    const isRegistered = await this.mongo.getGroups({ groupId });
+    if (isRegistered.length === 0) return;
+
+    const chat = await this.client.getChatById(groupId);
+
+    const wx = await this.getWeatherBundleCached(this.LAT, this.LONG);
+    if (!wx) {
+      await chat.sendMessage("Não consegui puxar a previsão de hoje agora 😕");
+      return;
+    }
+
+    const lines = this.buildDailyWeatherLines(wx.daily);
+    await chat.sendMessage(lines.join("\n"));
+
+    if (wx.daily.probRain >= 60) {
+      const stickerPath = "./stickers/gosto-de-capa.webp";
+      const sticker = MessageMedia.fromFilePath(stickerPath);
+
+      await chat.sendMessage(sticker, {
+        sendMediaAsSticker: true,
+      });
+    }
+  }
+
+  /**
    *  Sends if is going to rain today
    */
   public async handleRainQuestion(message: Message): Promise<void> {
@@ -280,16 +320,12 @@ export class CommonService {
       return;
     }
 
-    const lat = -16.67623877369769;
-    const lon = -49.258858721888245;
-
-    const wx = await this.getWeatherBundleCached(lat, lon);
+    const wx = await this.getWeatherBundleCached(this.LAT, this.LONG);
     if (!wx) {
       await message.reply("Não consegui ver a previsão agora 😕");
       return;
     }
-
-    const reply = this.formatRainAnswer(wx.rain.prob);
+    const reply = this.formatRainAnswer(wx.daily.probRain);
     await message.reply(reply);
   }
 
@@ -327,16 +363,13 @@ export class CommonService {
     const now = new Date();
     const hour = getHours(now);
 
-    const lat = -16.67;
-    const lon = -49.25;
-    const weather = await this.getWeatherBundleCached(lat, lon);
+    const weather = await this.getWeatherBundleCached(this.LAT, this.LONG);
     let tempEmoji = "☀️";
     if (weather) {
-      const condition = this.weatherCodeToEmoji(
+      tempEmoji = this.weatherCodeToEmoji(
         weather.current.code,
         weather.current.isDay
       );
-      tempEmoji = condition;
     }
 
     let text = "Oie, ";
@@ -356,14 +389,19 @@ export class CommonService {
     lon: number
   ): Promise<{
     current: { temp: number; code: number; isDay: boolean };
-    rain: { prob: number };
+    daily: {
+      probRain: number;
+      tMax: number;
+      tMin: number;
+      rhMin?: number | null;
+    };
   } | null> {
     try {
       const url =
         `https://api.open-meteo.com/v1/forecast` +
         `?latitude=${lat}&longitude=${lon}` +
         `&current=temperature_2m,weather_code,is_day` + // atual
-        `&daily=precipitation_probability_max` + // chuva hoje
+        `&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,relative_humidity_2m_min` + // diário
         `&forecast_days=1` +
         `&timezone=America%2FSao_Paulo`;
 
@@ -371,20 +409,33 @@ export class CommonService {
       if (!res.ok) return null;
       const data = await res.json();
 
-      // current
+      // Current
       const t = data?.current?.temperature_2m;
       const c = data?.current?.weather_code;
       const d = data?.current?.is_day;
-
       if (t == null || c == null || d == null) return null;
 
-      // rain today
-      const arr = data?.daily?.precipitation_probability_max;
-      const prob =
-        Array.isArray(arr) && arr[0] != null
-          ? Math.round(Number(arr[0]))
+      // Daily
+      const pr = data?.daily?.precipitation_probability_max;
+      const tmax = data?.daily?.temperature_2m_max;
+      const tmin = data?.daily?.temperature_2m_min;
+      const rhmin = data?.daily?.relative_humidity_2m_min;
+
+      if (!Array.isArray(pr) || !Array.isArray(tmax) || !Array.isArray(tmin))
+        return null;
+
+      const probRain =
+        pr[0] != null
+          ? Math.max(0, Math.min(100, Math.round(Number(pr[0]))))
           : null;
-      if (prob == null) return null;
+      const tMax = tmax[0] != null ? Math.round(Number(tmax[0])) : null;
+      const tMin = tmin[0] != null ? Math.round(Number(tmin[0])) : null;
+      const rhMin =
+        Array.isArray(rhmin) && rhmin[0] != null
+          ? Math.max(0, Math.min(100, Math.round(Number(rhmin[0]))))
+          : null;
+
+      if (probRain == null || tMax == null || tMin == null) return null;
 
       return {
         current: {
@@ -392,7 +443,7 @@ export class CommonService {
           code: Number(c),
           isDay: d === 1,
         },
-        rain: { prob: Math.max(0, Math.min(100, prob)) },
+        daily: { probRain, tMax, tMin, rhMin },
       };
     } catch {
       return null;
@@ -404,16 +455,19 @@ export class CommonService {
     lon: number
   ): Promise<{
     current: { temp: number; code: number; isDay: boolean };
-    rain: { prob: number };
+    daily: {
+      probRain: number;
+      tMax: number;
+      tMin: number;
+      rhMin?: number | null;
+    };
   } | null> {
     const now = Date.now();
 
-    // cache válido
     if (this.weatherCache && now - this.weatherCache.at < this.WEATHER_TTL_MS) {
       return this.weatherCache.data;
     }
 
-    // já tem chamada em andamento?
     if (this.weatherInFlight) {
       try {
         const data = await this.weatherInFlight;
@@ -423,7 +477,6 @@ export class CommonService {
       }
     }
 
-    // dispara nova chamada
     this.weatherInFlight = this.fetchWeatherBundle(lat, lon)
       .then((data) => {
         if (data) this.weatherCache = { at: Date.now(), data };
@@ -493,6 +546,45 @@ export class CommonService {
     }
     map.set(key, now);
     return { allowed: true, waitMs: 0 };
+  }
+
+  private buildDailyWeatherLines(input: {
+    probRain: number;
+    tMax: number;
+    tMin: number;
+    rhMin?: number | null;
+  }): string[] {
+    const lines: string[] = [];
+
+    let tempLine = `Bom dia Goiânia! A previsão do tempo para hoje é:\n🌡️ Mínima é de ${input.tMin}° e a máxima de ${input.tMax}°.\n`;
+    let tempStatus: "frio" | "calor" | "agradavel" | null = null;
+
+    if (input.tMin <= 16) {
+      tempLine +=
+        "\n🧥 Ou seja grandes chances fazer friozinho em Goiânia, levem blusinha de frilio.";
+      tempStatus = "frio";
+    } else if (input.tMax >= 33) {
+      tempLine +=
+        "\n🔥 Ou seja grandes chances de fazer um calor do caralho nesse inferno de cidade.";
+      tempStatus = "calor";
+    } else {
+      tempStatus = "agradavel";
+    }
+    lines.push(tempLine);
+
+    if (input.probRain >= 60) {
+      lines.push(
+        `\n☔ A probabilidade de chuva é ${input.probRain}% — pega sua capa!`
+      );
+    } else if (input.rhMin != null && input.rhMin <= 25) {
+      lines.push(
+        `\n🌵 A umidade média do dia é de ${input.rhMin}%, mais seco que o deserto do Saara 🏜️.`
+      );
+    } else if (tempStatus === "agradavel") {
+      lines.push("\n😄 Previsão tranquila para hoje em Goiânia.");
+    }
+
+    return lines;
   }
 
   // #endregion
