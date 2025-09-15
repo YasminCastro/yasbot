@@ -373,7 +373,7 @@ export class CommonService {
     }
 
     let text = "Oie, ";
-    if (hour <= 12) {
+    if (hour < 12) {
       text += `bom dia ${tempEmoji}`;
     } else if (hour < 18) {
       text += `boa tarde ${tempEmoji}`;
