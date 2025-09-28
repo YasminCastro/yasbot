@@ -113,6 +113,27 @@ function startCronJobs(
         const groupIds = await mongoService.getGroups();
         for (const groupId of groupIds) {
           await commonService.sendChatSummary(groupId);
+        }
+      } catch (err) {
+        logger.warn("❌ Error in daily summary job:", err);
+      }
+    },
+    {
+      timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
+    }
+  );
+
+  // Schedule daily weather at 06:00 (America/Sao_Paulo)
+  cron.schedule(
+    "0 7 * * *",
+    async () => {
+      logger.info(
+        "🔔 Running scheduled sendTodaysWeather for all registered groups"
+      );
+
+      try {
+        const groupIds = await mongoService.getGroups();
+        for (const groupId of groupIds) {
           await commonService.sendTodaysWeather(groupId);
         }
       } catch (err) {

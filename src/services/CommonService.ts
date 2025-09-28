@@ -21,7 +21,7 @@ export class CommonService {
 
   private genteSpamMap: Map<string, { lastTime: number }> = new Map();
 
-  private rainSpamMap: Map<string, number> = new Map();
+  private rainSpamMap = new Map<string, { count: number; first: number }>();
 
   private weatherCache?: {
     at: number;
@@ -310,13 +310,13 @@ export class CommonService {
     const chatId = message.from;
     const key = `${chatId}:${senderNumber}`;
 
-    const { allowed } = this.checkAndStamp(
+    const { action } = this.checkAndStamp(
       this.rainSpamMap,
       key,
-      60 * 60 * 1000
+      3 * 60 * 60 * 1000
     );
 
-    if (!allowed) {
+    if (action === "BLOCK") {
       return;
     }
 
@@ -325,6 +325,12 @@ export class CommonService {
       await message.reply("Não consegui ver a previsão agora 😕");
       return;
     }
+
+    if (action === "SASS") {
+      await message.reply("Bota o braço pra fora e vê se tá chovendo 😡");
+      return;
+    }
+
     const reply = this.formatRainAnswer(wx.daily.probRain);
     await message.reply(reply);
   }
@@ -533,19 +539,25 @@ export class CommonService {
   }
 
   private checkAndStamp(
-    map: Map<string, number>,
+    map: Map<string, { count: number; first: number }>,
     key: string,
     windowMs: number
-  ): { allowed: boolean; waitMs: number } {
+  ): { action: "NORMAL" | "SASS" | "BLOCK"; waitMs: number } {
     const now = Date.now();
-    const last = map.get(key) ?? 0;
-    const diff = now - last;
+    const entry = map.get(key);
 
-    if (diff < windowMs) {
-      return { allowed: false, waitMs: windowMs - diff };
+    if (!entry || now - entry.first >= windowMs) {
+      map.set(key, { count: 1, first: now });
+      return { action: "NORMAL", waitMs: 0 };
     }
-    map.set(key, now);
-    return { allowed: true, waitMs: 0 };
+
+    if (entry.count === 1) {
+      entry.count = 2;
+      map.set(key, entry);
+      return { action: "SASS", waitMs: windowMs - (now - entry.first) };
+    }
+
+    return { action: "BLOCK", waitMs: windowMs - (now - entry.first) };
   }
 
   private buildDailyWeatherLines(input: {
@@ -560,12 +572,10 @@ export class CommonService {
     let tempStatus: "frio" | "calor" | "agradavel" | null = null;
 
     if (input.tMin <= 16) {
-      tempLine +=
-        "\n🧥 Ou seja grandes chances fazer friozinho em Goiânia, levem blusinha de frilio.";
+      tempLine += "\n🧥🥶 Vai ta frilio.";
       tempStatus = "frio";
     } else if (input.tMax >= 33) {
-      tempLine +=
-        "\n🔥 Ou seja grandes chances de fazer um calor do caralho nesse inferno de cidade.";
+      tempLine += "\n🔥🫠 Vai ta quente.";
       tempStatus = "calor";
     } else {
       tempStatus = "agradavel";
@@ -577,9 +587,7 @@ export class CommonService {
         `\n☔ A probabilidade de chuva é ${input.probRain}% — pega sua capa!`
       );
     } else if (input.rhMin != null && input.rhMin <= 25) {
-      lines.push(
-        `\n🌵 A umidade média do dia é de ${input.rhMin}%, mais seco que o deserto do Saara 🏜️.`
-      );
+      lines.push(`\n💧👎 Umidade Baixa ${input.rhMin}%.`);
     } else if (tempStatus === "agradavel") {
       lines.push("\n😄 Previsão tranquila para hoje em Goiânia.");
     }
