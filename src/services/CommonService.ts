@@ -530,12 +530,57 @@ export class CommonService {
     return isDay ? sun : moon; // fallback
   }
 
-  private formatRainAnswer(prob: number): string {
+  private sample<T>(arr: T[]): T {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  private CITY = "Goiânia";
+
+  private formatRainAnswer(prob: number, useEmoji = true): string {
     const p = Math.max(0, Math.min(100, Math.round(prob)));
-    if (p >= 61) return `Sim, tem ${p}% de chover hoje em Goiânia`;
-    if (p >= 36) return `Acho que sim, tem ${p}% de chover hoje em Goiânia`;
-    if (p >= 11) return `Acho que não, tem ${p}% de chover hoje em Goiânia`;
-    return `Não, tem ${p}% de chover hoje em Goiânia`;
+    const city = this.CITY;
+
+    const E = {
+      high: useEmoji ? " ☔" : "",
+      likely: useEmoji ? " 🌧️" : "",
+      maybe: useEmoji ? " 🌦️" : "",
+      low: useEmoji ? " ☁️" : "",
+      dry: useEmoji ? " ☀️" : "",
+    };
+
+    const buckets = {
+      veryHigh: [
+        `Vai chover sim: ${p}% de chance em ${city}. Guarda-chuva é outfit do dia${E.high}`,
+        `Quase certo de água: ${p}% em ${city}. Fecha a janela!${E.high}`,
+        `Chuva no roteiro: ${p}% em ${city}. Capricho no capuz!${E.high}`,
+      ],
+      high: [
+        `Tudo indica chuva: ${p}% em ${city}. Melhor prevenir${E.likely}`,
+        `Boas chances de pingos: ${p}% em ${city}. Leva capa!${E.likely}`,
+        `Céu tramando: ${p}% em ${city}. Se liga!${E.likely}`,
+      ],
+      mid: [
+        `Pode chover: ${p}% em ${city}. Meio a meio…${E.maybe}`,
+        `Clima indeciso: ${p}% em ${city}. Guarda-chuva opcional.${E.maybe}`,
+        `Tem chance, mas não é certeza: ${p}% em ${city}.${E.maybe}`,
+      ],
+      low: [
+        `Pouca chance de chuva: ${p}% em ${city}. Talvez só um sereno.${E.low}`,
+        `Tá mais pra nublado que pra molhado: ${p}% em ${city}.${E.low}`,
+        `Chuva não deve ser protagonista hoje: ${p}% em ${city}.${E.low}`,
+      ],
+      veryLow: [
+        `Sem chuva por aqui: ${p}% em ${city}. Pode sair de boa${E.dry}`,
+        `Céu de boas: ${p}% em ${city}. ${E.dry}`,
+        `Tranquilo e seco: ${p}% em ${city}.${E.dry}`,
+      ],
+    };
+
+    if (p >= 81) return this.sample(buckets.veryHigh);
+    if (p >= 61) return this.sample(buckets.high);
+    if (p >= 36) return this.sample(buckets.mid);
+    if (p >= 11) return this.sample(buckets.low);
+    return this.sample(buckets.veryLow);
   }
 
   private checkAndStamp(
