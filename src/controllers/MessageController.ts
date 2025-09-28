@@ -55,7 +55,7 @@ export class MessageController {
       return true;
     }
 
-    if (text.includes("vai chover")) {
+    if (text.includes("vai chover?")) {
       await this.commomService.handleRainQuestion(message);
       return true;
     }
