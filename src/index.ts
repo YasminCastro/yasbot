@@ -21,15 +21,17 @@ async function startBot(): Promise<void> {
   let readyTimestamp = 0;
 
   const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+      dataPath: path.resolve(process.cwd(), ".wwebjs_auth"),
+      clientId: "yasbot",
+    }),
     puppeteer: {
       headless: true,
       executablePath: puppeteer.executablePath(),
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage", // comment in local
-        `--user-data-dir=${path.resolve(__dirname, ".wpp-session")}`, // comment in local
+        "--disable-dev-shm-usage",
       ],
     },
   });
