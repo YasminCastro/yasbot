@@ -55,6 +55,7 @@ export class CommonService {
     "geriátrica 👵",
     "jurrássica 💀",
     "inimiga do INSS 👵",
+    "assessor da sharmila 💖",
   ];
 
   private genteResponses = [
