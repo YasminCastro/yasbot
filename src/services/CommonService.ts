@@ -221,11 +221,18 @@ export class CommonService {
 
     const text = message.body ? message.body.trim() : message.type;
 
-    const authorId = message.author ?? message.from;
-    const senderNumber = authorId.split("@")[0];
+    const contact = await message.getContact();
 
-    //save message
-    await this.mongo.addMessage(groupId, text, senderNumber);
+    const senderWid = contact.id._serialized;
+
+    const senderPhone = (contact.number || contact.id.user || "").replace(
+      /\D/g,
+      ""
+    );
+
+    if (!senderPhone) return;
+
+    await this.mongo.addMessage(groupId, text, senderPhone, senderWid);
   }
 
   /**
@@ -236,19 +243,17 @@ export class CommonService {
     if (isRegistered.length === 0) return;
 
     const chat = await this.client.getChatById(groupId);
+
     const yesterdayStart = startOfYesterday();
     const yesterdayEnd = endOfYesterday();
     const dateString = format(yesterdayStart, "dd/MM/yyyy");
 
     const messages = await this.mongo.getMessages({
       groupId,
-      timestamp: {
-        $gte: yesterdayStart,
-        $lte: yesterdayEnd,
-      },
+      timestamp: { $gte: yesterdayStart, $lte: yesterdayEnd },
     });
 
-    if (messages.length === 0) {
+    if (!messages || messages.length === 0) {
       await chat.sendMessage(
         `📋 Nenhuma mensagem registrada para ${dateString}.`
       );
@@ -256,15 +261,20 @@ export class CommonService {
     }
 
     const total = messages.length;
+
     const { top3Lines, mentionJids } = await this.getTopSenders(messages);
 
     const summaryText =
       `📊 *Resumo do dia ${dateString}* 📊\n` +
       `Total de mensagens: *${total}*\n\n` +
-      "Top 3 participantes:\n" +
+      `Top 3 participantes:\n` +
       top3Lines.join("\n");
 
-    await chat.sendMessage(summaryText, { mentions: mentionJids });
+    if (mentionJids.length > 0) {
+      await chat.sendMessage(summaryText, { mentions: mentionJids });
+    } else {
+      await chat.sendMessage(summaryText);
+    }
 
     await this.mongo.saveGroupDailySummary(
       groupId,
@@ -340,27 +350,33 @@ export class CommonService {
 
   private async getTopSenders(messagesToday: LoggedMessage[]) {
     const counts: Record<string, number> = {};
+    const lastWidByPhone: Record<string, string> = {};
+
     for (const msg of messagesToday) {
-      counts[msg.sender] = (counts[msg.sender] || 0) + 1;
+      const phone = (msg.senderPhone || "").replace(/\D/g, "");
+      if (!phone) continue;
+      counts[phone] = (counts[phone] || 0) + 1;
+
+      if (msg.senderWid) lastWidByPhone[phone] = msg.senderWid;
     }
 
-    const sortedSenders = Object.entries(counts).sort(
-      ([, countA], [, countB]) => countB - countA
-    );
-
-    const top3 = sortedSenders.slice(0, 3);
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const top3 = sorted.slice(0, 3);
 
     const mentionJids: string[] = [];
     const top3Lines: string[] = [];
 
     for (let i = 0; i < top3.length; i++) {
-      const [sender, count] = top3[i];
-      const jid = `${sender}@c.us`;
-      mentionJids.push(jid);
+      const [phone, count] = top3[i];
 
-      // @<phone> fará o WhatsApp renderizar a menção
-      const phoneOnly = sender;
-      top3Lines.push(`${i + 1}. @${phoneOnly} – ${count} mensagem(s)`);
+      let serialized = lastWidByPhone[phone];
+      if (!serialized) {
+        const wid = await this.client.getNumberId(phone).catch(() => null);
+        serialized = wid?._serialized || `${phone}@s.whatsapp.net`;
+      }
+
+      mentionJids.push(serialized);
+      top3Lines.push(`${i + 1}. @${phone} – ${count} mensagem(s)`);
     }
 
     return { top3Lines, mentionJids };

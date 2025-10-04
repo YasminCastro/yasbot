@@ -240,14 +240,16 @@ export class MongoService {
   public async addMessage(
     groupId: string,
     message: string,
-    sender: string
+    senderPhone: string,
+    senderWid: string
   ): Promise<boolean> {
     try {
       const res = await this.messages.insertOne({
         groupId,
         message,
         timestamp: new Date(),
-        sender,
+        senderPhone,
+        senderWid,
       });
       return res.acknowledged;
     } catch (err: any) {

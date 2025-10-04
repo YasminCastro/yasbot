@@ -13,7 +13,8 @@ export interface Guest {
 export interface LoggedMessage {
   _id?: string;
   message: string;
-  sender: string;
+  senderPhone: string;
+  senderWid: string;
   timestamp: Date;
   groupId?: string;
 }
