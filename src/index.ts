@@ -127,7 +127,7 @@ function startCronJobs(
 
   // Schedule daily weather at 06:00 (America/Sao_Paulo)
   cron.schedule(
-    "0 7 * * *",
+    "0 6 * * *",
     async () => {
       logger.info(
         "🔔 Running scheduled sendTodaysWeather for all registered groups"
