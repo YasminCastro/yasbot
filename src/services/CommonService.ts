@@ -567,29 +567,23 @@ export class CommonService {
 
     const buckets = {
       veryHigh: [
-        `Vai chover sim: ${p}% de chance em ${city}. Guarda-chuva é outfit do dia${E.high}`,
-        `Quase certo de água: ${p}% em ${city}. Fecha a janela!${E.high}`,
-        `Chuva no roteiro: ${p}% em ${city}. Capricho no capuz!${E.high}`,
+        `Vai chover sim: ${p}% de chance em ${city}.`,
+        `Quase certo de chuva: ${p}% em ${city}. Fecha a janela!${E.high}`,
       ],
       high: [
         `Tudo indica chuva: ${p}% em ${city}. Melhor prevenir${E.likely}`,
         `Boas chances de pingos: ${p}% em ${city}. Leva capa!${E.likely}`,
-        `Céu tramando: ${p}% em ${city}. Se liga!${E.likely}`,
       ],
       mid: [
         `Pode chover: ${p}% em ${city}. Meio a meio…${E.maybe}`,
-        `Clima indeciso: ${p}% em ${city}. Guarda-chuva opcional.${E.maybe}`,
         `Tem chance, mas não é certeza: ${p}% em ${city}.${E.maybe}`,
       ],
       low: [
         `Pouca chance de chuva: ${p}% em ${city}. Talvez só um sereno.${E.low}`,
-        `Tá mais pra nublado que pra molhado: ${p}% em ${city}.${E.low}`,
-        `Chuva não deve ser protagonista hoje: ${p}% em ${city}.${E.low}`,
       ],
       veryLow: [
-        `Sem chuva por aqui: ${p}% em ${city}. Pode sair de boa${E.dry}`,
-        `Céu de boas: ${p}% em ${city}. ${E.dry}`,
-        `Tranquilo e seco: ${p}% em ${city}.${E.dry}`,
+        `De acordo com fontes "vozes da minha cabeça" não vai chover em ${city}, a previsão é de ${p}% de chuva.`,
+        `Sem chuva por aqui: ${p}% em ${city}.`,
       ],
     };
 
