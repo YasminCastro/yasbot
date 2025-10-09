@@ -55,16 +55,16 @@ export class MessageController {
       return true;
     }
 
-    if (text.includes("vai chover?")) {
-      await this.commomService.handleRainQuestion(message);
-      return true;
-    }
-
     if (
       text.includes("vai chover?") &&
       (text.includes("pica") || text.includes("cu"))
     ) {
       await message.reply("vai sim careca, corre e tira o seu do varal");
+      return true;
+    }
+
+    if (text.includes("vai chover?")) {
+      await this.commomService.handleRainQuestion(message);
       return true;
     }
 
