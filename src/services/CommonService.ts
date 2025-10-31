@@ -271,9 +271,6 @@ export class CommonService {
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
-    const chat = await message.getChat();
-
-    await this.sendTodaysWeather(chat.id._serialized);
     const contact = await message.getContact();
     const senderNumber = contact.number;
     const chatId = message.from;
@@ -390,8 +387,8 @@ export class CommonService {
    *  Sends a message about the weather
    */
   public async sendTodaysWeather(groupId: string): Promise<void> {
-    // const isRegistered = await this.mongo.getGroups({ groupId });
-    // if (isRegistered.length === 0) return;
+    const isRegistered = await this.mongo.getGroups({ groupId });
+    if (isRegistered.length === 0) return;
 
     const chat = await this.client.getChatById(groupId);
 
