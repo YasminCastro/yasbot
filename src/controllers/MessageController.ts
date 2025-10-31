@@ -57,7 +57,7 @@ export class MessageController {
 
     if (
       text.includes("vai chover?") &&
-      (text.includes("pica") || text.includes("cu"))
+      (text.includes("pica") || text.includes("cu") || text.includes("varal"))
     ) {
       await message.reply("vai sim careca, corre e tira o seu do varal");
       return true;

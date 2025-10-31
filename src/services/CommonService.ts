@@ -58,6 +58,11 @@ export class CommonService {
     "assessor da sharmila 💖",
   ];
 
+  private weatherResponses = [
+    "Tá achando que sou a garota do tempo do jornal nacional? Eu ein",
+    "Bota o braço pra fora e vê se tá chovendo 😡",
+  ];
+
   private genteResponses = [
     "Oh lá o capeta atentando...",
     "Lá vem...",
@@ -338,7 +343,11 @@ export class CommonService {
     }
 
     if (action === "SASS") {
-      await message.reply("Bota o braço pra fora e vê se tá chovendo 😡");
+      const response =
+        this.weatherResponses[
+          Math.floor(Math.random() * this.weatherResponses.length)
+        ];
+      await message.reply(response);
       return;
     }
 
