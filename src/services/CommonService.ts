@@ -102,16 +102,6 @@ export class CommonService {
       coordinates: { lat: 48.85, long: 2.29 },
     },
     {
-      city: "Paris",
-      startDate: "31/10/2025",
-      endDate: "20/11/2025",
-      hello: "Salut",
-      goodMorning: "bonjour",
-      goodEvening: "bon après-midi",
-      goodNight: "bonne nuit",
-      coordinates: { lat: 48.85, long: 2.29 },
-    },
-    {
       city: "Bruxelas",
       startDate: "21/11/2025",
       endDate: "23/11/2025",
