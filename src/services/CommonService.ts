@@ -440,9 +440,6 @@ export class CommonService {
       }
     }
 
-    console.log(baseLat, baseLong);
-    console.log(tripLat, tripLong);
-
     const [wxBase, wxTrip] = await Promise.all(fetches);
 
     if (!wxBase) {
