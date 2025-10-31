@@ -122,20 +122,21 @@ export class CommonService {
    * Reply the "gente" message
    */
   public async gente(message: Message): Promise<void> {
-    const authorId = message.author ?? message.from;
-    const senderNumber = authorId.split("@")[0];
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
     const chatId = message.from;
 
     const now = new Date();
-    const day = getDay(now);
+    const day = getDay(now); // 0 = domingo, 1 = segunda, ..., 6 = sábado
     const hour = getHours(now);
 
-    const isWeekend = day === 0 || day === 6;
-    const isWedToFriAfternoon = day >= 3 && day <= 5 && hour >= 16;
-    const isThuToSatEarly = day >= 4 && day <= 6 && hour <= 3;
+    // ✅ Só responde de sexta (16h) até domingo (19h)
+    const isActivePeriod =
+      (day === 5 && hour >= 16) || // sexta depois das 16h
+      day === 6 || // sábado inteiro
+      (day === 0 && hour < 19); // domingo até 19h
 
-    // Only send message if is the weekend or wednesday to friday between 15h and 03h
-    if (!(isWeekend || isWedToFriAfternoon || isThuToSatEarly)) {
+    if (!isActivePeriod) {
       return;
     }
 
@@ -144,7 +145,6 @@ export class CommonService {
     const oneHour = 60 * 60 * 1000;
 
     let entry = this.genteSpamMap.get(key);
-
     if (entry && dateNow - entry.lastTime < oneHour) {
       return;
     }
@@ -171,16 +171,14 @@ export class CommonService {
       ];
 
     await message.reply(response);
-
-    return;
   }
 
   /**
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
-    const authorId = message.author ?? message.from;
-    const senderNumber = authorId.split("@")[0];
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
     const chatId = message.from;
 
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
@@ -321,8 +319,8 @@ export class CommonService {
    *  Sends if is going to rain today
    */
   public async handleRainQuestion(message: Message): Promise<void> {
-    const authorId = message.author ?? message.from;
-    const senderNumber = authorId.split("@")[0];
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
     const chatId = message.from;
     const key = `${chatId}:${senderNumber}`;
 

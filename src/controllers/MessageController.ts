@@ -95,8 +95,8 @@ export class MessageController {
     if (chat.isGroup) return false;
 
     const text = message.body.trim().toLowerCase();
-    const authorId = message.author ?? message.from;
-    const senderNumber = authorId.split("@")[0];
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
 
     if (ADMIN_NUMBERS.includes(senderNumber)) {
       if (text.includes("@add-guest")) {
@@ -160,8 +160,8 @@ export class MessageController {
 
   private async adminServices(message: Message): Promise<boolean> {
     const text = message.body.trim().toLowerCase();
-    const authorId = message.author ?? message.from;
-    const senderNumber = authorId.split("@")[0];
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
 
     if (!ADMIN_NUMBERS.includes(senderNumber)) return false;
 
