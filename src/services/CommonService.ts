@@ -7,6 +7,10 @@ import {
   format,
   getHours,
   getDay,
+  startOfDay,
+  parse,
+  endOfDay,
+  isWithinInterval,
 } from "date-fns";
 import { LoggedMessage } from "../interfaces";
 import { FERNANDO_NUMBER, GLAUCIA_NUMBER, OLD_PEOPLE_NUMBERS } from "../config";
@@ -23,9 +27,26 @@ export class CommonService {
 
   private rainSpamMap = new Map<string, { count: number; first: number }>();
 
-  private weatherCache?: {
-    at: number;
-    data: {
+  private WEATHER_TTL_MS = 30 * 60 * 1000;
+  private weatherCache = new Map<
+    string,
+    {
+      at: number;
+      data: {
+        current: { temp: number; code: number; isDay: boolean };
+        daily: {
+          probRain: number;
+          tMax: number;
+          tMin: number;
+          rhMin?: number | null;
+        };
+      };
+    }
+  >();
+
+  private weatherInFlight = new Map<
+    string,
+    Promise<{
       current: { temp: number; code: number; isDay: boolean };
       daily: {
         probRain: number;
@@ -33,18 +54,8 @@ export class CommonService {
         tMin: number;
         rhMin?: number | null;
       };
-    };
-  };
-  private WEATHER_TTL_MS = 30 * 60 * 1000;
-  private weatherInFlight?: Promise<{
-    current: { temp: number; code: number; isDay: boolean };
-    daily: {
-      probRain: number;
-      tMax: number;
-      tMin: number;
-      rhMin?: number | null;
-    };
-  } | null>;
+    } | null>
+  >();
 
   private LAT = -16.67;
   private LONG = -49.25;
@@ -67,6 +78,99 @@ export class CommonService {
     "Oh lá o capeta atentando...",
     "Lá vem...",
     "Vixe, lá vem...",
+  ];
+
+  private trip = [
+    {
+      city: "São Paulo",
+      startDate: "30/11/2025",
+      endDate: "16/11/2025",
+      hello: "Olá",
+      goodMorning: "bom dia",
+      goodEvening: "boa tarde",
+      goodNight: "boa noite",
+      coordinates: { lat: -23.56, long: -46.68 },
+    },
+    {
+      city: "Paris",
+      startDate: "17/11/2025",
+      endDate: "20/11/2025",
+      hello: "Salut",
+      goodMorning: "bonjour",
+      goodEvening: "bon après-midi",
+      goodNight: "bonne nuit",
+      coordinates: { lat: 48.85, long: 2.29 },
+    },
+    {
+      city: "Paris",
+      startDate: "31/10/2025",
+      endDate: "20/11/2025",
+      hello: "Salut",
+      goodMorning: "bonjour",
+      goodEvening: "bon après-midi",
+      goodNight: "bonne nuit",
+      coordinates: { lat: 48.85, long: 2.29 },
+    },
+    {
+      city: "Bruxelas",
+      startDate: "21/11/2025",
+      endDate: "23/11/2025",
+      hello: "Salut",
+      goodMorning: "bonjour",
+      goodEvening: "bon après-midi",
+      goodNight: "bonne nuit",
+      coordinates: { lat: 50.84, long: 4.35 },
+    },
+    {
+      city: "Amsterdã",
+      startDate: "24/11/2025",
+      endDate: "26/11/2025",
+      hello: "Hallo",
+      goodMorning: "goedemorgen",
+      goodEvening: "goedemiddag",
+      goodNight: "goedenacht",
+      coordinates: { lat: 52.36, long: 4.89 },
+    },
+    {
+      city: "Milão",
+      startDate: "27/11/2025",
+      endDate: "29/11/2025",
+      hello: "Ciao",
+      goodMorning: "buongiorno",
+      goodEvening: "buon pomeriggio",
+      goodNight: "buona notte",
+      coordinates: { lat: 45.47, long: 9.18 },
+    },
+    {
+      city: "Barcelona",
+      startDate: "30/11/2025",
+      endDate: "02/12/2025",
+      hello: "Hola",
+      goodMorning: "buenos días",
+      goodEvening: "buenas tardes",
+      goodNight: "buenas noches",
+      coordinates: { lat: 41.39, long: 2.17 },
+    },
+    {
+      city: "São Paulo",
+      startDate: "03/12/2025",
+      endDate: "03/12/2025",
+      hello: "Olá",
+      goodMorning: "bom dia",
+      goodEvening: "boa tarde",
+      goodNight: "boa noite",
+      coordinates: { lat: -23.56, long: -46.68 },
+    },
+    {
+      city: "Goiânia",
+      startDate: "04/12/2025",
+      endDate: "04/12/2025",
+      hello: "Olá",
+      goodMorning: "bom dia",
+      goodEvening: "boa tarde",
+      goodNight: "boa noite",
+      coordinates: { lat: -16.67, long: -49.25 },
+    },
   ];
 
   constructor(private mongo: MongoService, private client: Client) {}
@@ -177,12 +281,14 @@ export class CommonService {
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
+    const chat = await message.getChat();
+
+    await this.sendTodaysWeather(chat.id._serialized);
     const contact = await message.getContact();
     const senderNumber = contact.number;
     const chatId = message.from;
 
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
-
     if (isAnOldPerson) {
       const slang =
         this.oldSlangs[Math.floor(Math.random() * this.oldSlangs.length)];
@@ -190,12 +296,14 @@ export class CommonService {
       return;
     }
 
+    // 🔎 Busca saudação da cidade conforme a data atual
+    const tripGreeting = this.getTripGreetingForDate(new Date());
+
     const key = `${chatId}:${senderNumber}`;
     const now = Date.now();
     const oneHour = 60 * 60 * 1000;
 
     let entry = this.helloSpamMap.get(key);
-
     if (!entry || now - entry.lastTime > oneHour) {
       entry = { count: 0, lastTime: now };
     }
@@ -205,7 +313,8 @@ export class CommonService {
     this.helloSpamMap.set(key, entry);
 
     if (entry.count === 1) {
-      await this.replyHello(message);
+      // 👉 Se tiver viagem vigente, usa as saudações da cidade; senão mantém padrão
+      await this.replyHello(message, tripGreeting ?? undefined);
     } else if (entry.count === 2) {
       await message.reply("Oie, eu já te dei oi 😑.");
     } else if (entry.count === 3) {
@@ -291,27 +400,89 @@ export class CommonService {
    *  Sends a message about the weather
    */
   public async sendTodaysWeather(groupId: string): Promise<void> {
-    const isRegistered = await this.mongo.getGroups({ groupId });
-    if (isRegistered.length === 0) return;
+    // const isRegistered = await this.mongo.getGroups({ groupId });
+    // if (isRegistered.length === 0) return;
 
     const chat = await this.client.getChatById(groupId);
 
-    const wx = await this.getWeatherBundleCached(this.LAT, this.LONG);
-    if (!wx) {
+    // Base (Goiânia)
+    const baseCity = "Goiânia";
+    const baseLat = this.LAT;
+    const baseLong = this.LONG;
+
+    // Trip do dia (se houver)
+    const today = new Date();
+    const tripToday = this.getTripForDate(today);
+
+    // Saudações conforme hora do dia
+    const baseGM = "Bom dia";
+
+    // Saudação da trip (se houver), escolhendo bom dia/tarde/noite da cidade
+    let tripGreetWord: string | null = null;
+    if (tripToday) {
+      tripGreetWord = "Bom dia";
+    }
+
+    // Busca previsão para base e (opcional) trip
+    const fetches = [];
+    fetches.push(this.getWeatherBundleCached(baseLat, baseLong));
+
+    let tripCityName: string | null = null;
+    let tripLat: number | null = null;
+    let tripLong: number | null = null;
+
+    if (tripToday?.coordinates) {
+      tripCityName = tripToday.city;
+      tripLat = tripToday.coordinates.lat;
+      tripLong = tripToday.coordinates.long;
+      if (!Number.isNaN(tripLat) && !Number.isNaN(tripLong)) {
+        fetches.push(this.getWeatherBundleCached(tripLat, tripLong));
+      }
+    }
+
+    console.log(baseLat, baseLong);
+    console.log(tripLat, tripLong);
+
+    const [wxBase, wxTrip] = await Promise.all(fetches);
+
+    if (!wxBase) {
       await chat.sendMessage("Não consegui puxar a previsão de hoje agora 😕");
       return;
     }
 
-    const lines = this.buildDailyWeatherLines(wx.daily);
-    await chat.sendMessage(lines.join("\n"));
+    // Cabeçalho com saudações combinadas
+    // Ex.: "Bom dia Goiânia, Bonjour Paris - França!"
+    const header =
+      tripToday && tripGreetWord
+        ? `${baseGM} ${baseCity}, ${tripGreetWord} ${tripToday.city}!`
+        : `${baseGM} ${baseCity}!`;
 
-    if (wx.daily.probRain >= 60) {
+    // Bloco 1: Goiânia
+    const linesBase: string[] = [];
+    linesBase.push(`A previsão do tempo para hoje em ${baseCity} é:`);
+    linesBase.push(...this.buildCityWeatherLines(wxBase.daily, baseCity));
+
+    // Bloco 2: Trip (se houver previsão)
+    const linesTrip: string[] = [];
+    if (tripToday && wxTrip) {
+      const showTrip = tripCityName && tripCityName !== `${baseCity}`; // evita duplicar se for a mesma cidade nominalmente
+      if (showTrip) {
+        linesTrip.push("");
+        linesTrip.push(`E para ${tripToday.city} é:`);
+        linesTrip.push(
+          ...this.buildCityWeatherLines(wxTrip.daily, tripToday.city)
+        );
+      }
+    }
+
+    const finalMsg = [header, "", ...linesBase, ...linesTrip].join("\n");
+    await chat.sendMessage(finalMsg);
+
+    // Sticker de chuva (apenas se a base indicar muita chuva, como antes)
+    if (wxBase.daily.probRain >= 60) {
       const stickerPath = "./stickers/gosto-de-capa.webp";
       const sticker = MessageMedia.fromFilePath(stickerPath);
-
-      await chat.sendMessage(sticker, {
-        sendMediaAsSticker: true,
-      });
+      await chat.sendMessage(sticker, { sendMediaAsSticker: true });
     }
   }
 
@@ -355,6 +526,44 @@ export class CommonService {
 
   // region Helpers
 
+  private buildCityWeatherLines(
+    input: {
+      probRain: number;
+      tMax: number;
+      tMin: number;
+      rhMin?: number | null;
+    },
+    cityName: string
+  ): string[] {
+    const lines: string[] = [];
+
+    // Linha de temperaturas
+    lines.push(`🌡️ Mínima é de ${input.tMin}° e a máxima de ${input.tMax}°.`);
+
+    // Estado térmico / umidade / fallback
+    let tempStatus: "frio" | "calor" | "agradavel" | null = null;
+
+    if (input.tMin <= 16) {
+      lines.push("🧥🥶 Vai ta frio.");
+      tempStatus = "frio";
+    } else if (input.tMax >= 33) {
+      lines.push("🔥🫠 Vai ta quente.");
+      tempStatus = "calor";
+    } else {
+      tempStatus = "agradavel";
+    }
+
+    if (input.probRain >= 60) {
+      lines.push(`☔ A probabilidade de chuva é ${input.probRain}%.`);
+    } else if (input.rhMin != null && input.rhMin <= 25) {
+      lines.push(`💧👎 Umidade Baixa ${input.rhMin}%.`);
+    } else if (tempStatus === "agradavel") {
+      lines.push(`😄 Previsão tranquila para hoje em ${cityName}.`);
+    }
+
+    return lines;
+  }
+
   private async getTopSenders(messagesToday: LoggedMessage[]) {
     const counts: Record<string, number> = {};
     const lastWidByPhone: Record<string, string> = {};
@@ -389,7 +598,15 @@ export class CommonService {
     return { top3Lines, mentionJids };
   }
 
-  private async replyHello(message: Message) {
+  private async replyHello(
+    message: Message,
+    override?: {
+      hello: string;
+      goodMorning: string;
+      goodEvening: string;
+      goodNight: string;
+    }
+  ) {
     const now = new Date();
     const hour = getHours(now);
 
@@ -402,13 +619,19 @@ export class CommonService {
       );
     }
 
-    let text = "Oie, ";
+    // Se houver override, usa as strings da cidade; senão usa o padrão PT-BR
+    const gm = override?.goodMorning ?? "bom dia";
+    const ge = override?.goodEvening ?? "boa tarde";
+    const gn = override?.goodNight ?? "boa noite";
+
+    let text = override?.hello ? `${override.hello}, ` : "Oie, ";
+
     if (hour < 12) {
-      text += `bom dia ${tempEmoji}`;
+      text += `${gm} ${tempEmoji}`;
     } else if (hour < 18) {
-      text += `boa tarde ${tempEmoji}`;
+      text += `${ge} ${tempEmoji}`;
     } else {
-      text += `boa noite ${tempEmoji}`;
+      text += `${gn} ${tempEmoji}`;
     }
 
     await message.reply(text);
@@ -430,22 +653,21 @@ export class CommonService {
       const url =
         `https://api.open-meteo.com/v1/forecast` +
         `?latitude=${lat}&longitude=${lon}` +
-        `&current=temperature_2m,weather_code,is_day` + // atual
-        `&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,relative_humidity_2m_min` + // diário
+        `&current=temperature_2m,weather_code,is_day` +
+        `&daily=precipitation_probability_max,temperature_2m_max,temperature_2m_min,relative_humidity_2m_min` +
         `&forecast_days=1` +
-        `&timezone=America%2FSao_Paulo`;
+        `&timezone=auto`; // <<<<<< aqui muda para auto
 
       const res = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
 
-      // Current
+      // (resto igual ao seu)
       const t = data?.current?.temperature_2m;
       const c = data?.current?.weather_code;
       const d = data?.current?.is_day;
       if (t == null || c == null || d == null) return null;
 
-      // Daily
       const pr = data?.daily?.precipitation_probability_max;
       const tmax = data?.daily?.temperature_2m_max;
       const tmin = data?.daily?.temperature_2m_min;
@@ -494,33 +716,43 @@ export class CommonService {
   } | null> {
     const now = Date.now();
 
-    if (this.weatherCache && now - this.weatherCache.at < this.WEATHER_TTL_MS) {
-      return this.weatherCache.data;
+    // chave do cache por coordenadas (arredonde para evitar floats quase iguais)
+    const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+
+    // 1) cache quente
+    const cached = this.weatherCache.get(key);
+    if (cached && now - cached.at < this.WEATHER_TTL_MS) {
+      return cached.data;
     }
 
-    if (this.weatherInFlight) {
+    // 2) requisição em andamento para a mesma key
+    const inflight = this.weatherInFlight.get(key);
+    if (inflight) {
       try {
-        const data = await this.weatherInFlight;
-        return data ?? this.weatherCache?.data ?? null;
+        const data = await inflight;
+        return data ?? this.weatherCache.get(key)?.data ?? null;
       } catch {
-        return this.weatherCache?.data ?? null;
+        return this.weatherCache.get(key)?.data ?? null;
       }
     }
 
-    this.weatherInFlight = this.fetchWeatherBundle(lat, lon)
+    // 3) iniciar nova requisição e registrá-la no mapa
+    const p = this.fetchWeatherBundle(lat, lon)
       .then((data) => {
-        if (data) this.weatherCache = { at: Date.now(), data };
+        if (data) this.weatherCache.set(key, { at: Date.now(), data });
         return data;
       })
       .finally(() => {
-        this.weatherInFlight = undefined;
+        this.weatherInFlight.delete(key);
       });
 
+    this.weatherInFlight.set(key, p);
+
     try {
-      const fresh = await this.weatherInFlight;
-      return fresh ?? this.weatherCache?.data ?? null;
+      const fresh = await p;
+      return fresh ?? this.weatherCache.get(key)?.data ?? null;
     } catch {
-      return this.weatherCache?.data ?? null;
+      return this.weatherCache.get(key)?.data ?? null;
     }
   }
 
@@ -623,39 +855,44 @@ export class CommonService {
     return { action: "BLOCK", waitMs: windowMs - (now - entry.first) };
   }
 
-  private buildDailyWeatherLines(input: {
-    probRain: number;
-    tMax: number;
-    tMin: number;
-    rhMin?: number | null;
-  }): string[] {
-    const lines: string[] = [];
+  private getTripGreetingForDate(date: Date): {
+    hello: string;
+    goodMorning: string;
+    goodEvening: string;
+    goodNight: string;
+  } | null {
+    for (const t of this.trip) {
+      const start = startOfDay(parse(t.startDate, "dd/MM/yyyy", new Date()));
+      const end = endOfDay(parse(t.endDate, "dd/MM/yyyy", new Date()));
 
-    let tempLine = `Bom dia Goiânia! A previsão do tempo para hoje é:\n🌡️ Mínima é de ${input.tMin}° e a máxima de ${input.tMax}°.\n`;
-    let tempStatus: "frio" | "calor" | "agradavel" | null = null;
-
-    if (input.tMin <= 16) {
-      tempLine += "\n🧥🥶 Vai ta frilio.";
-      tempStatus = "frio";
-    } else if (input.tMax >= 33) {
-      tempLine += "\n🔥🫠 Vai ta quente.";
-      tempStatus = "calor";
-    } else {
-      tempStatus = "agradavel";
+      if (isWithinInterval(date, { start, end })) {
+        return {
+          hello: t.hello,
+          goodMorning: t.goodMorning,
+          goodEvening: t.goodEvening,
+          goodNight: t.goodNight,
+        };
+      }
     }
-    lines.push(tempLine);
+    return null;
+  }
 
-    if (input.probRain >= 60) {
-      lines.push(
-        `\n☔ A probabilidade de chuva é ${input.probRain}% — pega sua capa!`
-      );
-    } else if (input.rhMin != null && input.rhMin <= 25) {
-      lines.push(`\n💧👎 Umidade Baixa ${input.rhMin}%.`);
-    } else if (tempStatus === "agradavel") {
-      lines.push("\n😄 Previsão tranquila para hoje em Goiânia.");
+  private getTripForDate(date: Date): null | {
+    city: string;
+    startDate: string;
+    endDate: string;
+    hello: string;
+    goodMorning: string;
+    goodEvening: string;
+    goodNight: string;
+    coordinates?: { lat: number; long: number };
+  } {
+    for (const t of this.trip) {
+      const start = startOfDay(parse(t.startDate, "dd/MM/yyyy", new Date()));
+      const end = endOfDay(parse(t.endDate, "dd/MM/yyyy", new Date()));
+      if (isWithinInterval(date, { start, end })) return t as any;
     }
-
-    return lines;
+    return null;
   }
 
   // #endregion
