@@ -61,10 +61,15 @@ async function startBot(): Promise<void> {
     readyTimestamp = Math.floor(Date.now() / 1000);
     logger.info("✔️  Yasbot is ready!");
     isConnected = true;
+
     await sendPing("yasbot", 1);
+
+    if (NODE_ENV !== "development") {
+      startCronJobs(mongoService, commonService, () => isConnected);
+    }
   });
 
-  client.on("disconnected", () => {
+  client.on("disconnected", async () => {
     isConnected = false;
     logger.warn("⚠️ WhatsApp desconectado. Pings pausados até reconectar.");
   });
@@ -101,10 +106,6 @@ async function startBot(): Promise<void> {
   });
 
   await client.initialize();
-
-  if (NODE_ENV !== "development") {
-    startCronJobs(mongoService, commonService, () => isConnected);
-  }
 }
 
 startBot().catch((err) => {
