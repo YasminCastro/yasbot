@@ -11,7 +11,7 @@ import { logger } from "./utils/logger";
 import { CommonService } from "./services/CommonService";
 import { AdminService } from "./services/AdminService";
 import { PartyInviteService } from "./services/PartyInviteService";
-import { ADMIN_NUMBERS, NODE_ENV } from "./config";
+import { NODE_ENV, PING_SECRET, PING_URL } from "./config";
 import { shouldProcessInDev } from "./utils/startHelpers";
 
 /**
@@ -164,22 +164,37 @@ function startCronJobs(
     }
   );
 
-  cron.schedule(
-    "0 8-22 * * *",
-    async () => {
-      logger.info("📡 Enviando ping (ping) para admins...");
+  if (PING_URL && PING_SECRET) {
+    cron.schedule(
+      "*/10 8-22 * * *",
+      async () => {
+        logger.info("📡 Enviando ping HTTP para YasTech...");
 
-      try {
-        for (const adminId of ADMIN_NUMBERS) {
-          const chatId = `${adminId}@c.us`;
-          await client.sendMessage(chatId, "ping");
+        try {
+          const res = await fetch(PING_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-ping-secret": PING_SECRET,
+            },
+            body: JSON.stringify({
+              botId: "yasbot",
+            }),
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Ping falhou: ${res.status} - ${text}`);
+          }
+
+          logger.info("✅ Ping enviado com sucesso!");
+        } catch (err) {
+          logger.warn("❌ Erro no job de ping:", err);
         }
-      } catch (err) {
-        logger.warn("❌ Erro no job de ping para admins:", err);
+      },
+      {
+        timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
       }
-    },
-    {
-      timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
-    }
-  );
+    );
+  }
 }

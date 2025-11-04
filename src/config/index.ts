@@ -39,3 +39,6 @@ export const GLAUCIA_NUMBER = glauciaNumber;
 
 const fernandoNumber = process.env["FERNANDO_NUMBER"];
 export const FERNANDO_NUMBER = fernandoNumber;
+
+export const PING_URL = requireEnv("PING_URL");
+export const PING_SECRET = requireEnv("PING_SECRET");
