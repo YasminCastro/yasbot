@@ -13,12 +13,14 @@ import { AdminService } from "./services/AdminService";
 import { PartyInviteService } from "./services/PartyInviteService";
 import { NODE_ENV, PING_SECRET, PING_URL } from "./config";
 import { shouldProcessInDev } from "./utils/startHelpers";
+import { sendPing } from "./utils/sendPing";
 
 /**
  * Initializes and starts the bot
  */
 async function startBot(): Promise<void> {
   let readyTimestamp = 0;
+  let isConnected = false;
 
   const client = new Client({
     authStrategy: new LocalAuth({
@@ -55,9 +57,21 @@ async function startBot(): Promise<void> {
     logger.info("📸 Scan the QR code above to authenticate");
   });
 
-  client.on("ready", () => {
+  client.on("ready", async () => {
     readyTimestamp = Math.floor(Date.now() / 1000);
     logger.info("✔️  Yasbot is ready!");
+    isConnected = true;
+    await sendPing("yasbot", 1);
+  });
+
+  client.on("disconnected", () => {
+    isConnected = false;
+    logger.warn("⚠️ WhatsApp desconectado. Pings pausados até reconectar.");
+  });
+
+  client.on("auth_failure", (msg) => {
+    logger.error("❌ Falha na autenticação:", msg);
+    isConnected = false;
   });
 
   client.on("message", async (message: Message) => {
@@ -89,7 +103,7 @@ async function startBot(): Promise<void> {
   await client.initialize();
 
   if (NODE_ENV !== "development") {
-    startCronJobs(mongoService, commonService, client);
+    startCronJobs(mongoService, commonService, () => isConnected);
   }
 }
 
@@ -101,7 +115,7 @@ startBot().catch((err) => {
 function startCronJobs(
   mongoService: MongoService,
   commonService: CommonService,
-  client: Client
+  isConnectedFn: () => boolean
 ) {
   // Schedule daily summary at 07:00 (America/Sao_Paulo)
   cron.schedule(
@@ -164,37 +178,17 @@ function startCronJobs(
     }
   );
 
-  if (PING_URL && PING_SECRET) {
-    cron.schedule(
-      "*/10 8-22 * * *",
-      async () => {
-        logger.info("📡 Enviando ping HTTP para YasTech...");
-
-        try {
-          const res = await fetch(PING_URL, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-ping-secret": PING_SECRET,
-            },
-            body: JSON.stringify({
-              botId: "yasbot",
-            }),
-          });
-
-          if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Ping falhou: ${res.status} - ${text}`);
-          }
-
-          logger.info("✅ Ping enviado com sucesso!");
-        } catch (err) {
-          logger.warn("❌ Erro no job de ping:", err);
-        }
-      },
-      {
-        timezone: process.env.TIME_ZONE || "America/Sao_Paulo",
+  cron.schedule(
+    "*/10 8-22 * * *",
+    async () => {
+      if (!isConnectedFn()) {
+        logger.info("⏸️ WhatsApp offline — ping ignorado.");
+        return;
       }
-    );
-  }
+
+      logger.info("📡 Enviando ping periódico...");
+      await sendPing("yasbot", 1);
+    },
+    { timezone: process.env.TIME_ZONE || "America/Sao_Paulo" }
+  );
 }
