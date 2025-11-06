@@ -180,14 +180,10 @@ function startCronJobs(
   );
 
   cron.schedule(
-    "*/10 8-22 * * *",
+    "*/10 * * * *",
     async () => {
-      if (!isConnectedFn()) {
-        logger.info("⏸️ WhatsApp offline — ping ignorado.");
-        return;
-      }
+      if (!isConnectedFn()) return;
 
-      logger.info("📡 Enviando ping periódico...");
       await sendPing("yasbot", 1);
     },
     { timezone: process.env.TIME_ZONE || "America/Sao_Paulo" }
