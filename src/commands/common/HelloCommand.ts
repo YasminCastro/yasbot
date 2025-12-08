@@ -1,14 +1,14 @@
 import { Message } from "whatsapp-web.js";
-import { CommonService } from "../../services/CommonService";
+import { GreetingService } from "../../services/GreetingService";
 
 /**
  * Command to greet users
  */
 export class HelloCommand {
-  constructor(private commonService: CommonService) {}
+  constructor(private greetingService: GreetingService) {}
 
   public async execute(message: Message): Promise<boolean> {
-    await this.commonService.hello(message);
+    await this.greetingService.hello(message);
     return true;
   }
 }

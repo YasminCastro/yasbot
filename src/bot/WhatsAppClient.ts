@@ -4,8 +4,6 @@ import qrcode from "qrcode-terminal";
 import path from "path";
 import { logger } from "../utils/logger";
 import { CommandHandler } from "../commands/CommandHandler";
-import { Database } from "../repositories/Database";
-import { CommonService } from "../services/CommonService";
 import { shouldProcessInDev } from "../middlewares";
 import { NODE_ENV } from "../config";
 import { sendPing } from "../utils/sendPing";
@@ -19,11 +17,7 @@ export class WhatsAppClient {
   private readyTimestamp = 0;
   private isConnected = false;
 
-  constructor(
-    database: Database,
-    commonService: CommonService,
-    commandHandler: CommandHandler
-  ) {
+  constructor(commandHandler: CommandHandler) {
     this.commandHandler = commandHandler;
     this.client = new Client({
       authStrategy: new LocalAuth({

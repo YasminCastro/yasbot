@@ -1,11 +1,11 @@
 import { Message } from "whatsapp-web.js";
-import { CommonService } from "../../services/CommonService";
+import { WeatherService } from "../../services/WeatherService";
 
 /**
  * Command to check if it's going to rain
  */
 export class RainCommand {
-  constructor(private commonService: CommonService) {}
+  constructor(private weatherService: WeatherService) {}
 
   public async execute(message: Message): Promise<boolean> {
     const text = message.body.trim().toLowerCase();
@@ -20,7 +20,7 @@ export class RainCommand {
     }
 
     if (text.includes("vai chover?")) {
-      await this.commonService.handleRainQuestion(message);
+      await this.weatherService.handleRainQuestion(message);
       return true;
     }
 

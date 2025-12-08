@@ -1,18 +1,12 @@
 import { Message } from "whatsapp-web.js";
 import { isAdmin } from "../middlewares";
-import {
-  AllCommand,
-  HelloCommand,
-  RainCommand,
-  GenteCommand,
-} from "./common";
-import {
-  AdminCommand,
-  AddGroupCommand,
-  RemoveGroupCommand,
-} from "./admin";
+import { AllCommand, HelloCommand, RainCommand, GenteCommand } from "./common";
+import { AdminCommand, AddGroupCommand, RemoveGroupCommand } from "./admin";
 import { PartyInviteCommands } from "./party";
-import { CommonService } from "../services/CommonService";
+import { MentionService } from "../services/MentionService";
+import { GreetingService } from "../services/GreetingService";
+import { WeatherService } from "../services/WeatherService";
+import { MessageService } from "../services/MessageService";
 import { AdminService } from "../services/AdminService";
 import { PartyInviteService } from "../services/PartyInviteService";
 import { Database } from "../repositories/Database";
@@ -36,16 +30,19 @@ export class CommandHandler {
   private partyInviteCommands: PartyInviteCommands;
 
   constructor(
-    private commonService: CommonService,
+    mentionService: MentionService,
+    greetingService: GreetingService,
+    weatherService: WeatherService,
+    private messageService: MessageService,
     adminService: AdminService,
     partyInviteService: PartyInviteService,
     private database: Database
   ) {
     // Initialize common commands
-    this.allCommand = new AllCommand();
-    this.helloCommand = new HelloCommand(commonService);
-    this.rainCommand = new RainCommand(commonService);
-    this.genteCommand = new GenteCommand(commonService);
+    this.allCommand = new AllCommand(mentionService);
+    this.helloCommand = new HelloCommand(greetingService);
+    this.rainCommand = new RainCommand(weatherService);
+    this.genteCommand = new GenteCommand(greetingService);
 
     // Initialize admin commands
     this.adminCommand = new AdminCommand(adminService);
@@ -68,12 +65,15 @@ export class CommandHandler {
     // Add message to database if it's from a group
     if (chat.isGroup) {
       const groupId = (chat as any).id._serialized;
-      await this.commonService.addMessage(message, groupId);
+      await this.messageService.addMessage(message, groupId);
     }
 
     // Handle party invite commands (private chats only)
     if (!chat.isGroup) {
-      const handled = await this.partyInviteCommands.handleCommand(message, text);
+      const handled = await this.partyInviteCommands.handleCommand(
+        message,
+        text
+      );
       if (handled) return;
     }
 
@@ -123,4 +123,3 @@ export class CommandHandler {
     }
   }
 }
-

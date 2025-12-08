@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import { CommonService } from "../services/CommonService";
+import { WeatherService } from "../services/WeatherService";
 import { Database } from "../repositories/Database";
 
 /**
@@ -8,7 +8,7 @@ import { Database } from "../repositories/Database";
 export class DailyWeatherJob {
   constructor(
     private database: Database,
-    private commonService: CommonService
+    private weatherService: WeatherService
   ) {}
 
   public async execute(): Promise<void> {
@@ -19,7 +19,7 @@ export class DailyWeatherJob {
     try {
       const groupIds = await this.database.groups.getGroups();
       for (const groupId of groupIds) {
-        await this.commonService.sendTodaysWeather(groupId);
+        await this.weatherService.sendTodaysWeather(groupId);
       }
     } catch (err) {
       logger.warn("❌ Error in daily weather job:", err);

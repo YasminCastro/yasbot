@@ -1,5 +1,5 @@
 import { logger } from "../utils/logger";
-import { CommonService } from "../services/CommonService";
+import { SummaryService } from "../services/SummaryService";
 import { Database } from "../repositories/Database";
 
 /**
@@ -8,7 +8,7 @@ import { Database } from "../repositories/Database";
 export class DailySummaryJob {
   constructor(
     private database: Database,
-    private commonService: CommonService
+    private summaryService: SummaryService
   ) {}
 
   public async execute(): Promise<void> {
@@ -19,7 +19,7 @@ export class DailySummaryJob {
     try {
       const groupIds = await this.database.groups.getGroups();
       for (const groupId of groupIds) {
-        await this.commonService.sendChatSummary(groupId);
+        await this.summaryService.sendChatSummary(groupId);
       }
     } catch (err) {
       logger.warn("❌ Error in daily summary job:", err);

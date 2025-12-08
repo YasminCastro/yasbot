@@ -1,6 +1,10 @@
 import { logger } from "../utils/logger";
 import { Database } from "../repositories/Database";
-import { CommonService } from "../services/CommonService";
+import { MentionService } from "../services/MentionService";
+import { GreetingService } from "../services/GreetingService";
+import { WeatherService } from "../services/WeatherService";
+import { MessageService } from "../services/MessageService";
+import { SummaryService } from "../services/SummaryService";
 import { AdminService } from "../services/AdminService";
 import { PartyInviteService } from "../services/PartyInviteService";
 import { CommandHandler } from "../commands/CommandHandler";
@@ -18,43 +22,39 @@ import { NODE_ENV } from "../config";
  * Initializes and starts the bot application
  */
 async function startBot(): Promise<void> {
-  // Initialize database
   const database = new Database();
   await database.connect();
 
-  // Create WhatsApp client first (it will create the internal Client)
-  const whatsappClient = new WhatsAppClient(
-    database,
-    {} as CommonService,
-    {} as CommandHandler
-  );
+  const whatsappClient = new WhatsAppClient({} as CommandHandler);
 
-  // Get the client instance to use in services
   const client = whatsappClient.getClient();
 
-  // Initialize services with the client
-  const commonService = new CommonService(database, client);
+  // Initialize services
+  const weatherService = new WeatherService(database, client);
+  const greetingService = new GreetingService(weatherService);
+  const mentionService = new MentionService();
+  const messageService = new MessageService(database);
+  const summaryService = new SummaryService(database, client);
   const adminService = new AdminService(database, client);
   const partyInviteService = new PartyInviteService(database, client);
 
-  // Initialize command handler
   const commandHandler = new CommandHandler(
-    commonService,
+    mentionService,
+    greetingService,
+    weatherService,
+    messageService,
     adminService,
     partyInviteService,
     database
   );
 
-  // Set the command handler in WhatsApp client
   whatsappClient.setCommandHandler(commandHandler);
 
-  // Initialize jobs
-  const dailySummaryJob = new DailySummaryJob(database, commonService);
-  const dailyWeatherJob = new DailyWeatherJob(database, commonService);
+  const dailySummaryJob = new DailySummaryJob(database, summaryService);
+  const dailyWeatherJob = new DailyWeatherJob(database, weatherService);
   const cleanupJob = new CleanupJob(database);
   const pingJob = new PingJob();
 
-  // Start scheduler if not in development
   if (NODE_ENV !== "development") {
     const scheduler = new Scheduler(
       dailySummaryJob,
@@ -66,7 +66,6 @@ async function startBot(): Promise<void> {
     scheduler.start();
   }
 
-  // Initialize WhatsApp client
   await whatsappClient.initialize();
 }
 
