@@ -216,8 +216,11 @@ export class CommonService {
    * Reply the "gente" message
    */
   public async gente(message: Message): Promise<void> {
-    const contact = await message.getContact();
-    const senderNumber = contact.number;
+    const fromId = message.from;
+    const numberMatch = fromId.match(/^(\d+)@/);
+    const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
+
+    const senderNumber = number;
     const chatId = message.from;
 
     const now = new Date();
@@ -271,8 +274,11 @@ export class CommonService {
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
-    const contact = await message.getContact();
-    const senderNumber = contact.number;
+    const fromId = message.from;
+    const numberMatch = fromId.match(/^(\d+)@/);
+    const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
+
+    const senderNumber = number;
     const chatId = message.from;
 
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
@@ -320,14 +326,13 @@ export class CommonService {
 
     const text = message.body ? message.body.trim() : message.type;
 
-    const contact = await message.getContact();
+    const fromId = message.from;
+    const numberMatch = fromId.match(/^(\d+)@/);
+    const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
 
-    const senderWid = contact.id._serialized;
+    const senderWid = fromId;
 
-    const senderPhone = (contact.number || contact.id.user || "").replace(
-      /\D/g,
-      ""
-    );
+    const senderPhone = number.replace(/\D/g, "");
 
     if (!senderPhone) return;
 
@@ -474,8 +479,11 @@ export class CommonService {
    *  Sends if is going to rain today
    */
   public async handleRainQuestion(message: Message): Promise<void> {
-    const contact = await message.getContact();
-    const senderNumber = contact.number;
+    const fromId = message.from;
+    const numberMatch = fromId.match(/^(\d+)@/);
+    const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
+
+    const senderNumber = number;
     const chatId = message.from;
     const key = `${chatId}:${senderNumber}`;
 
