@@ -36,7 +36,7 @@ async function startBot(): Promise<void> {
   const messageService = new MessageService(database);
   const summaryService = new SummaryService(database, client);
   const adminService = new AdminService(database, client);
-  const partyInviteService = new PartyInviteService(database, client);
+  // const partyInviteService = new PartyInviteService(database, client);
 
   const commandHandler = new CommandHandler(
     mentionService,
@@ -44,7 +44,7 @@ async function startBot(): Promise<void> {
     weatherService,
     messageService,
     adminService,
-    partyInviteService,
+    // partyInviteService,
     database
   );
 

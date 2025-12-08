@@ -27,7 +27,7 @@ export class CommandHandler {
   private removeGroupCommand: RemoveGroupCommand;
 
   // Party commands
-  private partyInviteCommands: PartyInviteCommands;
+  // private partyInviteCommands: PartyInviteCommands;
 
   constructor(
     mentionService: MentionService,
@@ -35,7 +35,7 @@ export class CommandHandler {
     weatherService: WeatherService,
     private messageService: MessageService,
     adminService: AdminService,
-    partyInviteService: PartyInviteService,
+    // partyInviteService: PartyInviteService,
     private database: Database
   ) {
     // Initialize common commands
@@ -50,7 +50,7 @@ export class CommandHandler {
     this.removeGroupCommand = new RemoveGroupCommand(adminService);
 
     // Initialize party commands
-    this.partyInviteCommands = new PartyInviteCommands(partyInviteService);
+    // this.partyInviteCommands = new PartyInviteCommands(partyInviteService);
   }
 
   /**
@@ -69,13 +69,13 @@ export class CommandHandler {
     }
 
     // Handle party invite commands (private chats only)
-    if (!chat.isGroup) {
-      const handled = await this.partyInviteCommands.handleCommand(
-        message,
-        text
-      );
-      if (handled) return;
-    }
+    // if (!chat.isGroup) {
+    //   const handled = await this.partyInviteCommands.handleCommand(
+    //     message,
+    //     text
+    //   );
+    //   if (handled) return;
+    // }
 
     // Handle admin commands
     if (isAdmin(message)) {

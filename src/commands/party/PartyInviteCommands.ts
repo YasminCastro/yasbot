@@ -10,7 +10,6 @@ export class PartyInviteCommands {
   public async handleCommand(message: Message, text: string): Promise<boolean> {
     const chat = await message.getChat();
     if (chat.isGroup) {
-      // Party invite commands are only for private chats
       return false;
     }
 
