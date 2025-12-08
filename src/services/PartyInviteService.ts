@@ -1,15 +1,15 @@
-// src/actions/BotActions.ts
 import { Client, Message, MessageMedia, Location } from "whatsapp-web.js";
-import { MongoService } from "./MongoService";
+import { Database } from "../repositories/Database";
 import { logger } from "../utils/logger";
-import { Guest } from "../interfaces";
+import { Guest } from "../models";
 import { ADMIN_NUMBERS } from "../config";
+import { extractPhoneNumber } from "../middlewares";
 
 /**
- * Class responsible for handling all bot actions
+ * Class responsible for handling party actions
  */
 export class PartyInviteService {
-  constructor(private mongo: MongoService, private client: Client) {}
+  constructor(private database: Database, private client: Client) {}
 
   /**
    * Add guests to the birthday list, with optional sendInvitation flag
@@ -71,7 +71,7 @@ export class PartyInviteService {
       return;
     }
 
-    const wasGuestAdded = await this.mongo.addGuest(
+    const wasGuestAdded = await this.database.guests.addGuest(
       person,
       normalizedNumber,
       sendInvitation
@@ -130,7 +130,7 @@ export class PartyInviteService {
       query.name = { $regex: new RegExp(input, "i") };
     }
 
-    let wasRemoved = await this.mongo.removeGuest(query);
+    let wasRemoved = await this.database.guests.removeGuest(query);
 
     const who = isPhone ? normalized : input;
     if (wasRemoved) {
@@ -195,7 +195,7 @@ export class PartyInviteService {
       return;
     }
 
-    const ok = await this.mongo.updateGuest(filter, updateFields);
+    const ok = await this.database.guests.updateGuest(filter, updateFields);
     if (ok) {
       await message.reply(
         `✅ ${name} atualizado com sucesso:\n` +
@@ -214,7 +214,7 @@ export class PartyInviteService {
    * Get birthday list
    */
   public async getGuests(message: Message): Promise<void> {
-    const guests = await this.mongo.getGuests();
+    const guests = await this.database.guests.getGuests();
 
     if (guests.length === 0) {
       await message.reply("📋 A lista de convidados está vazia.");
@@ -266,7 +266,7 @@ export class PartyInviteService {
    * send birthday invitations to guests who haven't received them yet
    */
   public async sendInvites(message: Message): Promise<void> {
-    const guests = await this.mongo.getGuests({
+    const guests = await this.database.guests.getGuests({
       receivedInvitation: false,
       sendInvitation: true,
     });
@@ -284,7 +284,7 @@ export class PartyInviteService {
     for (const guest of guests) {
       try {
         await this.mountInviteAndSend(guest, media, partyLocation);
-        await this.mongo.markInvited(guest.number);
+        await this.database.guests.markInvited(guest.number);
       } catch (err) {
         logger.error(`❌ Failed to send to ${guest.number}:`, err);
       }
@@ -300,7 +300,7 @@ export class PartyInviteService {
    * sends a reminder to guests who haven't confirm the invitation yet
    */
   public async sendConfirmationReminder(message: Message): Promise<void> {
-    const guests = await this.mongo.getGuests({
+    const guests = await this.database.guests.getGuests({
       confirmed: { $exists: false },
     });
 
@@ -342,9 +342,11 @@ export class PartyInviteService {
    * send birthday invitations to guests who haven't received them yet
    */
   public async sendInvite(message: Message): Promise<void> {
-    const senderNumber = message.from.split("@")[0].replace("55", "");
+    const senderNumber = extractPhoneNumber(message.from);
 
-    const guests = await this.mongo.getGuests({ number: senderNumber });
+    const guests = await this.database.guests.getGuests({
+      number: senderNumber,
+    });
     const guest = guests[0];
 
     if (!guest) {
@@ -362,9 +364,11 @@ export class PartyInviteService {
    * Confirms the presence of a guest
    */
   public async confirmPresence(message: Message): Promise<void> {
-    const senderNumber = message.from.split("@")[0].replace("55", "");
+    const senderNumber = extractPhoneNumber(message.from);
 
-    const guests = await this.mongo.getGuests({ number: senderNumber });
+    const guests = await this.database.guests.getGuests({
+      number: senderNumber,
+    });
     const guest = guests[0];
 
     if (!guest) {
@@ -377,7 +381,7 @@ export class PartyInviteService {
       return;
     }
 
-    await this.mongo.changeGuestConfirmStatus(senderNumber, true);
+    await this.database.guests.changeGuestConfirmStatus(senderNumber, true);
     await message.reply("✅ Sua presença foi confirmada com sucesso!");
 
     await this.notifyAdmin(guest, true);
@@ -387,9 +391,11 @@ export class PartyInviteService {
    * Cancels the presence of a guest
    */
   public async cancelPresence(message: Message): Promise<void> {
-    const senderNumber = message.from.split("@")[0].replace("55", "");
+    const senderNumber = extractPhoneNumber(message.from);
 
-    const guests = await this.mongo.getGuests({ number: senderNumber });
+    const guests = await this.database.guests.getGuests({
+      number: senderNumber,
+    });
     const guest = guests[0];
 
     if (!guest) {
@@ -397,7 +403,7 @@ export class PartyInviteService {
       return;
     }
 
-    await this.mongo.changeGuestConfirmStatus(senderNumber, false);
+    await this.database.guests.changeGuestConfirmStatus(senderNumber, false);
     await message.reply("❌ Sua presença foi cancelada!");
 
     await this.notifyAdmin(guest, false);

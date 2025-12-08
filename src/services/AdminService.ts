@@ -1,12 +1,11 @@
-// src/actions/BotActions.ts
 import { Message, GroupChat, Client } from "whatsapp-web.js";
-import { MongoService } from "../services/MongoService";
+import { Database } from "../repositories/Database";
 
 /**
  * Class responsible for handling admin actions
  */
 export class AdminService {
-  constructor(private mongo: MongoService, private client: Client) {}
+  constructor(private database: Database, private client: Client) {}
 
   /**
    * Registers the current group for daily summaries.
@@ -22,7 +21,7 @@ export class AdminService {
     const group = chat as GroupChat;
 
     const groupId = group.id._serialized;
-    const added = await this.mongo.addGroup(groupId);
+    const added = await this.database.groups.addGroup(groupId);
     await message.reply(added.message);
   }
 
@@ -40,7 +39,7 @@ export class AdminService {
     const group = chat as GroupChat;
 
     const groupId = group.id._serialized;
-    const added = await this.mongo.removeGroup(groupId);
+    const added = await this.database.groups.removeGroup(groupId);
     await message.reply(added.message);
   }
 

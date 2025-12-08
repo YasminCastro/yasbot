@@ -1,6 +1,5 @@
-// src/actions/BotActions.ts
 import { Message, GroupChat, Client, MessageMedia } from "whatsapp-web.js";
-import { MongoService } from "../services/MongoService";
+import { Database } from "../repositories/Database";
 import {
   startOfYesterday,
   endOfYesterday,
@@ -12,7 +11,7 @@ import {
   endOfDay,
   isWithinInterval,
 } from "date-fns";
-import { LoggedMessage } from "../interfaces";
+import { LoggedMessage } from "../models";
 import { FERNANDO_NUMBER, GLAUCIA_NUMBER, OLD_PEOPLE_NUMBERS } from "../config";
 
 /**
@@ -163,7 +162,7 @@ export class CommonService {
     },
   ];
 
-  constructor(private mongo: MongoService, private client: Client) {}
+  constructor(private database: Database, private client: Client) {}
 
   /**
    * Mentions all participants in a group chat
@@ -321,7 +320,7 @@ export class CommonService {
    * Registers the current message for daily summaries.
    */
   public async addMessage(message: Message, groupId: string): Promise<void> {
-    const isRegistered = await this.mongo.getGroups({ groupId });
+    const isRegistered = await this.database.groups.getGroups({ groupId });
     if (isRegistered.length === 0) return;
 
     const text = message.body ? message.body.trim() : message.type;
@@ -336,14 +335,19 @@ export class CommonService {
 
     if (!senderPhone) return;
 
-    await this.mongo.addMessage(groupId, text, senderPhone, senderWid);
+    await this.database.messages.addMessage(
+      groupId,
+      text,
+      senderPhone,
+      senderWid
+    );
   }
 
   /**
    *  Sends a chat summary to the group.
    */
   public async sendChatSummary(groupId: string): Promise<void> {
-    const isRegistered = await this.mongo.getGroups({ groupId });
+    const isRegistered = await this.database.groups.getGroups({ groupId });
     if (isRegistered.length === 0) return;
 
     const chat = await this.client.getChatById(groupId);
@@ -352,7 +356,7 @@ export class CommonService {
     const yesterdayEnd = endOfYesterday();
     const dateString = format(yesterdayStart, "dd/MM/yyyy");
 
-    const messages = await this.mongo.getMessages({
+    const messages = await this.database.messages.getMessages({
       groupId,
       timestamp: { $gte: yesterdayStart, $lte: yesterdayEnd },
     });
@@ -380,7 +384,7 @@ export class CommonService {
       await chat.sendMessage(summaryText);
     }
 
-    await this.mongo.saveGroupDailySummary(
+    await this.database.groups.saveGroupDailySummary(
       groupId,
       top3Lines,
       total,
@@ -392,7 +396,7 @@ export class CommonService {
    *  Sends a message about the weather
    */
   public async sendTodaysWeather(groupId: string): Promise<void> {
-    const isRegistered = await this.mongo.getGroups({ groupId });
+    const isRegistered = await this.database.groups.getGroups({ groupId });
     if (isRegistered.length === 0) return;
 
     const chat = await this.client.getChatById(groupId);

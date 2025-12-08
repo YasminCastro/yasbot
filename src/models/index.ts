@@ -31,18 +31,3 @@ export interface GroupDailySummary {
   totalMessages: number;
   top3Lines: string[];
 }
-
-export interface Vakinha {
-  _id?: string;
-  name: string;
-  targetAmount: number;
-  collectedAmount: number;
-  creator: string;
-  createdAt: Date;
-  endDate?: Date;
-  donors: Array<{
-    number: string;
-    amount: number;
-    date: Date;
-  }>;
-}

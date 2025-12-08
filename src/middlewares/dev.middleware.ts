@@ -1,6 +1,10 @@
 import { Message } from "whatsapp-web.js";
 import { ADMIN_GROUP, ADMIN_NUMBERS } from "../config";
+import { extractPhoneNumber } from "./auth.middleware";
 
+/**
+ * Checks if message should be processed in development mode
+ */
 export function shouldProcessInDev(message: Message, chat: any): boolean {
   if (
     (!ADMIN_NUMBERS || ADMIN_NUMBERS.length === 0) &&
@@ -12,6 +16,7 @@ export function shouldProcessInDev(message: Message, chat: any): boolean {
   if (chat.isGroup) {
     return ADMIN_GROUP.includes(chat.id._serialized);
   } else {
-    return ADMIN_NUMBERS.includes(`${message.from}@c.us`);
+    const senderNumber = extractPhoneNumber(message.from);
+    return ADMIN_NUMBERS.includes(senderNumber);
   }
 }
