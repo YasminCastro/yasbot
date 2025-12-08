@@ -6,7 +6,7 @@ import { WeatherService } from "../services/WeatherService";
 import { MessageService } from "../services/MessageService";
 import { SummaryService } from "../services/SummaryService";
 import { AdminService } from "../services/AdminService";
-import { PartyInviteService } from "../services/PartyInviteService";
+// import { PartyInviteService } from "../services/PartyInviteService";
 import { CommandHandler } from "../commands/CommandHandler";
 import { WhatsAppClient } from "../bot/WhatsAppClient";
 import {
@@ -32,7 +32,7 @@ async function startBot(): Promise<void> {
   // Initialize services
   const weatherService = new WeatherService(database, client);
   const greetingService = new GreetingService(weatherService);
-  const mentionService = new MentionService();
+  const mentionService = new MentionService(client);
   const messageService = new MessageService(database);
   const summaryService = new SummaryService(database, client);
   const adminService = new AdminService(database, client);

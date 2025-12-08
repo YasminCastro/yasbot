@@ -1,4 +1,4 @@
-import { Message, GroupChat } from "whatsapp-web.js";
+import { Message, GroupChat, Client } from "whatsapp-web.js";
 
 /**
  * Service for handling group mentions
@@ -6,8 +6,10 @@ import { Message, GroupChat } from "whatsapp-web.js";
 export class MentionService {
   private lastMentionTime: Map<string, number> = new Map();
 
+  constructor(private client: Client) {}
+
   /**
-   * Mentions all participants in a group chat
+   * Mentions all participants in a group chat (excluding the bot itself)
    */
   public async mentionAll(message: Message): Promise<void> {
     const chat = await message.getChat();
@@ -34,7 +36,23 @@ export class MentionService {
 
     this.lastMentionTime.set(groupId, now);
 
-    const jids = group.participants.map((p) => p.id._serialized);
+    // Get bot's own number to exclude it from mentions
+    const botInfo = this.client.info;
+    const botWid = botInfo?.wid?._serialized;
+
+    // Filter out the bot from participants
+    let jids = group.participants.map((p) => p.id._serialized);
+
+    // Remove bot from mentions if bot info is available
+    if (botWid) {
+      jids = jids.filter((jid) => jid !== botWid);
+    }
+
+    if (jids.length === 0) {
+      await message.reply("❌ Não há outros participantes para mencionar.");
+      return;
+    }
+
     const mentionsText = jids.map((jid) => `@${jid.split("@")[0]}`).join(" ");
     const body = mentionsText;
 

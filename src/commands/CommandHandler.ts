@@ -2,13 +2,13 @@ import { Message } from "whatsapp-web.js";
 import { isAdmin } from "../middlewares";
 import { AllCommand, HelloCommand, RainCommand, GenteCommand } from "./common";
 import { AdminCommand, AddGroupCommand, RemoveGroupCommand } from "./admin";
-import { PartyInviteCommands } from "./party";
+// import { PartyInviteCommands } from "./party";
 import { MentionService } from "../services/MentionService";
 import { GreetingService } from "../services/GreetingService";
 import { WeatherService } from "../services/WeatherService";
 import { MessageService } from "../services/MessageService";
 import { AdminService } from "../services/AdminService";
-import { PartyInviteService } from "../services/PartyInviteService";
+// import { PartyInviteService } from "../services/PartyInviteService";
 import { Database } from "../repositories/Database";
 
 /**
