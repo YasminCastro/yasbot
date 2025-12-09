@@ -16,7 +16,10 @@ export class MessageService {
 
     const text = message.body ? message.body.trim() : message.type;
 
-    const fromId = message.from;
+    const chat = await message.getChat();
+    const fromId =
+      chat.isGroup && message.author ? message.author : message.from;
+
     const numberMatch = fromId.match(/^(\d+)@/);
     const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
 
