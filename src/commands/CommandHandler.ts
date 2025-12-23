@@ -1,6 +1,12 @@
 import { Message } from "whatsapp-web.js";
 import { isAdmin } from "../middlewares";
-import { AllCommand, HelloCommand, RainCommand, GenteCommand } from "./common";
+import {
+  AllCommand,
+  HelloCommand,
+  RainCommand,
+  GenteCommand,
+  BirthdayCommands,
+} from "./common";
 import {
   AdminCommand,
   AddGroupCommand,
@@ -15,6 +21,7 @@ import { MessageService } from "../services/MessageService";
 import { AdminService } from "../services/AdminService";
 // import { PartyInviteService } from "../services/PartyInviteService";
 import { Database } from "../repositories/Database";
+import { Client } from "whatsapp-web.js";
 
 /**
  * Main command handler that routes messages to appropriate commands
@@ -25,6 +32,7 @@ export class CommandHandler {
   private helloCommand: HelloCommand;
   private rainCommand: RainCommand;
   private genteCommand: GenteCommand;
+  private birthdayCommands: BirthdayCommands;
 
   // Admin commands
   private adminCommand: AdminCommand;
@@ -42,13 +50,15 @@ export class CommandHandler {
     private messageService: MessageService,
     adminService: AdminService,
     // partyInviteService: PartyInviteService,
-    private database: Database
+    private database: Database,
+    private client: Client
   ) {
     // Initialize common commands
     this.allCommand = new AllCommand(mentionService);
     this.helloCommand = new HelloCommand(greetingService);
     this.rainCommand = new RainCommand(weatherService);
     this.genteCommand = new GenteCommand(greetingService);
+    this.birthdayCommands = new BirthdayCommands(adminService);
 
     // Initialize admin commands
     this.adminCommand = new AdminCommand(adminService);
@@ -69,10 +79,36 @@ export class CommandHandler {
     const chat = await message.getChat();
     const text = message.body.trim().toLowerCase();
 
-    // Add message to database if it's from a group
     if (chat.isGroup) {
       const groupId = (chat as any).id._serialized;
       await this.messageService.addMessage(message, groupId);
+
+      const mentionedJids = message.mentionedIds || [];
+      const botInfo = this.client.info;
+      const botWid = botInfo?.wid?._serialized;
+      const isBotMentioned =
+        (botWid && mentionedJids.includes(botWid)) ||
+        (text.includes("@") &&
+          (text.includes("próximo aniversário") ||
+            text.includes("proximo aniversario") ||
+            text.includes("de quem é o próximo aniversário") ||
+            text.includes("de quem e o proximo aniversario") ||
+            text.includes("lista de aniversarios") ||
+            text.includes("lista de aniversários") ||
+            text.includes("quando é o aniversario") ||
+            text.includes("quando e o aniversario") ||
+            text.includes("quando é o aniversário") ||
+            text.includes("quando e o aniversário")));
+
+      if (isBotMentioned) {
+        const birthdayHandled = await this.birthdayCommands.handleCommand(
+          message,
+          text
+        );
+        if (birthdayHandled) {
+          return;
+        }
+      }
     }
 
     // Handle party invite commands (private chats only)

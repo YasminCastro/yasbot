@@ -45,7 +45,8 @@ async function startBot(): Promise<void> {
     messageService,
     adminService,
     // partyInviteService,
-    database
+    database,
+    client
   );
 
   whatsappClient.setCommandHandler(commandHandler);
