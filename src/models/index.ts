@@ -31,3 +31,10 @@ export interface GroupDailySummary {
   totalMessages: number;
   top3Lines: string[];
 }
+
+export interface User {
+  _id?: string;
+  name: string;
+  phoneNumber: string;
+  birthday?: Date;
+}

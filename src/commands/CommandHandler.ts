@@ -1,7 +1,12 @@
 import { Message } from "whatsapp-web.js";
 import { isAdmin } from "../middlewares";
 import { AllCommand, HelloCommand, RainCommand, GenteCommand } from "./common";
-import { AdminCommand, AddGroupCommand, RemoveGroupCommand } from "./admin";
+import {
+  AdminCommand,
+  AddGroupCommand,
+  RemoveGroupCommand,
+  UsersCommand,
+} from "./admin";
 // import { PartyInviteCommands } from "./party";
 import { MentionService } from "../services/MentionService";
 import { GreetingService } from "../services/GreetingService";
@@ -25,6 +30,7 @@ export class CommandHandler {
   private adminCommand: AdminCommand;
   private addGroupCommand: AddGroupCommand;
   private removeGroupCommand: RemoveGroupCommand;
+  private usersCommand: UsersCommand;
 
   // Party commands
   // private partyInviteCommands: PartyInviteCommands;
@@ -48,6 +54,7 @@ export class CommandHandler {
     this.adminCommand = new AdminCommand(adminService);
     this.addGroupCommand = new AddGroupCommand(adminService);
     this.removeGroupCommand = new RemoveGroupCommand(adminService);
+    this.usersCommand = new UsersCommand(adminService);
 
     // Initialize party commands
     // this.partyInviteCommands = new PartyInviteCommands(partyInviteService);
@@ -91,6 +98,15 @@ export class CommandHandler {
 
       if (text.includes("@remove-group")) {
         await this.removeGroupCommand.execute(message);
+        return;
+      }
+
+      // Handle user commands
+      const userCommandHandled = await this.usersCommand.handleCommand(
+        message,
+        text
+      );
+      if (userCommandHandled) {
         return;
       }
     }

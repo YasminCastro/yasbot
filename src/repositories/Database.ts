@@ -4,6 +4,7 @@ import { MONGO_URI, DB_NAME } from "../config";
 import { GuestRepository } from "./GuestRepository";
 import { GroupRepository } from "./GroupRepository";
 import { MessageRepository } from "./MessageRepository";
+import { UserRepository } from "./UserRepository";
 
 /**
  * Database connection manager and repository container
@@ -14,6 +15,7 @@ export class Database {
   public guests: GuestRepository;
   public groups: GroupRepository;
   public messages: MessageRepository;
+  public users: UserRepository;
 
   constructor() {
     this.client = new MongoClient(MONGO_URI);
@@ -21,6 +23,7 @@ export class Database {
     this.guests = new GuestRepository(this.client, this.dbName);
     this.groups = new GroupRepository(this.client, this.dbName);
     this.messages = new MessageRepository(this.client, this.dbName);
+    this.users = new UserRepository(this.client, this.dbName);
   }
 
   /**
@@ -31,6 +34,7 @@ export class Database {
     await this.guests.initialize();
     await this.groups.initialize();
     await this.messages.initialize();
+    await this.users.initialize();
     logger.info("✅ MongoDB connected.");
   }
 

@@ -20,6 +20,45 @@
 | `@add-group`     | Adiciona grupo à lista de grupos gerenciados | Somente admin |
 | `@remove-group`  | Remove grupo da lista de grupos gerenciados  | Somente admin |
 
+## 👥 Comandos de Gerenciamento de Usuários (Admin)
+
+| Mensagem/Comando                              | Descrição                                                                    | Restrição     | Exemplo                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------------- | ------------- | ----------------------------------------- |
+| `@usuario <número> <nome> <data_aniversário>` | Adiciona um novo usuário ao sistema                                          | Somente admin | `@usuario +55 62 8332-1120 Glaucia 16/12` |
+| `@remover-usuario <número>`                   | Remove um usuário do sistema pelo número de telefone                         | Somente admin | `@remover-usuario 6283321120`             |
+| `@usuarios`                                   | Lista todos os usuários cadastrados com nome, telefone e data de aniversário | Somente admin | `@usuarios`                               |
+
+### 📋 Detalhes dos Comandos de Usuários
+
+#### Adicionar Usuário (`@usuario`)
+
+- **Formato**: `@usuario <número> <nome> <data_aniversário>`
+- **Número**: Pode ser informado com ou sem código do país (+55), com espaços ou hífens
+  - Exemplos válidos: `+55 62 8332-1120`, `6283321120`, `62 8332-1120`
+- **Nome**: Pode conter espaços (ex: "Maria Silva")
+- **Data de aniversário**: Formato `DD/MM` (ex: `16/12`, `01/01`)
+- **Validações**:
+  - O número deve conter DDD + 8 ou 9 dígitos
+  - A data deve estar no formato DD/MM válido
+  - Não permite adicionar usuários duplicados (mesmo número)
+
+#### Remover Usuário (`@remover-usuario`)
+
+- **Formato**: `@remover-usuario <número>`
+- **Número**: Pode ser informado com ou sem código do país, com espaços ou hífens
+- **Validações**:
+  - Verifica se o usuário existe antes de remover
+  - Retorna mensagem de erro se o usuário não for encontrado
+
+#### Listar Usuários (`@usuarios`)
+
+- **Formato**: `@usuarios`
+- **Retorno**: Lista todos os usuários cadastrados mostrando:
+  - Nome do usuário
+  - Número de telefone
+  - Data de aniversário (formato DD/MM)
+- **Observação**: Se houver muitos usuários, a lista pode ser dividida em múltiplas mensagens
+
 ## 🎉 Comandos de Evento (Chat Privado)
 
 | Mensagem/Comando               | Descrição                    | Restrição    |
