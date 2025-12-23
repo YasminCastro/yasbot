@@ -47,7 +47,7 @@ export class AdminService {
 
   /**
    * Adds a new user to the users collection
-   * Usage: @usuario +55 62 8332-1120 Glaucia 16/12
+   * Usage: @usuario +55 62 1234-5678 <NOME> 16/12
    */
   public async addUser(message: Message): Promise<void> {
     const text = message.body.trim();
@@ -57,7 +57,7 @@ export class AdminService {
     if (!commandText) {
       await message.reply(
         "❌ Uso: @usuario <número> <nome> <data_aniversário>\n" +
-          "Exemplo: @usuario +55 62 8332-1120 Glaucia 16/12"
+          "Exemplo: @usuario +55 62 1234-5678 <NOME> 16/12"
       );
       return;
     }
@@ -607,9 +607,18 @@ export class AdminService {
       );
 
       if (!foundUser) {
-        await message.reply(
-          `❌ Não encontrei nenhum usuário cadastrado com o nome "${personName}".`
-        );
+        const registeredNames = allUsers.map((user) => user.name).sort();
+
+        let response = `❌ Não sei o aniversário de ${personName}.\n\n`;
+
+        if (registeredNames.length > 0) {
+          response += `Só sei o aniversário das seguintes pessoas:\n`;
+          response += registeredNames.join("\n");
+        } else {
+          response += `Nenhuma pessoa está cadastrada no sistema.`;
+        }
+
+        await message.reply(response);
         return;
       }
 
