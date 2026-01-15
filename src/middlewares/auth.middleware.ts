@@ -13,7 +13,7 @@ export function extractPhoneNumber(from: string): string {
  * Checks if the sender is an admin
  */
 export function isAdmin(message: Message): boolean {
-  const senderNumber = extractPhoneNumber(message.from);
+  const senderNumber = extractPhoneNumber(message.author || message.from);
   return ADMIN_NUMBERS.includes(senderNumber);
 }
 

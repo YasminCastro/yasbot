@@ -85,7 +85,7 @@ export class WeatherService {
    * Sends if is going to rain today
    */
   public async handleRainQuestion(message: Message): Promise<void> {
-    const fromId = message.from;
+    const fromId = message.author || message.from;
     const numberMatch = fromId.match(/^(\d+)@/);
     const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
 

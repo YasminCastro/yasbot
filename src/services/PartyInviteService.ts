@@ -342,7 +342,7 @@ export class PartyInviteService {
    * send birthday invitations to guests who haven't received them yet
    */
   public async sendInvite(message: Message): Promise<void> {
-    const senderNumber = extractPhoneNumber(message.from);
+    const senderNumber = extractPhoneNumber(message.author || message.from);
 
     const guests = await this.database.guests.getGuests({
       number: senderNumber,
@@ -364,7 +364,7 @@ export class PartyInviteService {
    * Confirms the presence of a guest
    */
   public async confirmPresence(message: Message): Promise<void> {
-    const senderNumber = extractPhoneNumber(message.from);
+    const senderNumber = extractPhoneNumber(message.author || message.from);
 
     const guests = await this.database.guests.getGuests({
       number: senderNumber,
@@ -391,7 +391,7 @@ export class PartyInviteService {
    * Cancels the presence of a guest
    */
   public async cancelPresence(message: Message): Promise<void> {
-    const senderNumber = extractPhoneNumber(message.from);
+    const senderNumber = extractPhoneNumber(message.author || message.from);
 
     const guests = await this.database.guests.getGuests({
       number: senderNumber,

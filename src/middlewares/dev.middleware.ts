@@ -16,7 +16,7 @@ export function shouldProcessInDev(message: Message, chat: any): boolean {
   if (chat.isGroup) {
     return ADMIN_GROUP.includes(chat.id._serialized);
   } else {
-    const senderNumber = extractPhoneNumber(message.from);
+    const senderNumber = extractPhoneNumber(message.author || message.from);
     return ADMIN_NUMBERS.includes(senderNumber);
   }
 }

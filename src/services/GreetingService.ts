@@ -72,7 +72,7 @@ export class GreetingService {
    * Reply the "gente" message
    */
   public async gente(message: Message): Promise<void> {
-    const fromId = message.from;
+    const fromId = message.author || message.from;
     const numberMatch = fromId.match(/^(\d+)@/);
     const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
 
