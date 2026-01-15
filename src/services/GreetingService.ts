@@ -32,9 +32,9 @@ export class GreetingService {
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
-    const fromId = message.author || message.from;
-    const senderNumber = fromId.replace(/\D/g, "");
     const chatId = message.from;
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
 
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
     if (isAnOldPerson) {
@@ -72,11 +72,9 @@ export class GreetingService {
    * Reply the "gente" message
    */
   public async gente(message: Message): Promise<void> {
-    const fromId = message.author || message.from;
-    const numberMatch = fromId.match(/^(\d+)@/);
-    const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
+    const contact = await message.getContact();
+    const senderNumber = contact.number;
 
-    const senderNumber = number;
     const chatId = message.from;
 
     const now = new Date();

@@ -109,6 +109,14 @@ export class CommandHandler {
           return;
         }
       }
+
+      const groupIds = await this.database.groups.getGroups();
+      if (groupIds.includes(groupId)) {
+        if (text === "gente" || text === "gebte") {
+          await this.genteCommand.execute(message);
+          return;
+        }
+      }
     }
 
     // Handle party invite commands (private chats only)
@@ -161,17 +169,5 @@ export class CommandHandler {
     // Rain command
     const rainHandled = await this.rainCommand.execute(message);
     if (rainHandled) return;
-
-    // Gente command (only for registered groups)
-    if (chat.isGroup) {
-      const groupId = (chat as any).id._serialized;
-      const groupIds = await this.database.groups.getGroups();
-      if (groupIds.includes(groupId)) {
-        if (text === "gente" || text === "gebte") {
-          await this.genteCommand.execute(message);
-          return;
-        }
-      }
-    }
   }
 }
