@@ -33,10 +33,7 @@ export class GreetingService {
    */
   public async hello(message: Message): Promise<void> {
     const fromId = message.from;
-    const numberMatch = fromId.match(/^(\d+)@/);
-    const number = numberMatch ? numberMatch[1] : fromId.replace(/@.*$/, "");
-
-    const senderNumber = number;
+    const senderNumber = fromId.replace(/\D/g, "");
     const chatId = message.from;
 
     const isAnOldPerson = OLD_PEOPLE_NUMBERS.includes(senderNumber);
@@ -151,8 +148,6 @@ export class GreetingService {
     } else {
       text += `boa noite ${tempEmoji}`;
     }
-
     await message.reply(text);
   }
 }
-
