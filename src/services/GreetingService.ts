@@ -32,7 +32,7 @@ export class GreetingService {
    * Send a hello message
    */
   public async hello(message: Message): Promise<void> {
-    const fromId = message.from;
+    const fromId = message.author || message.from;
     const senderNumber = fromId.replace(/\D/g, "");
     const chatId = message.from;
 
